@@ -18,6 +18,7 @@ import {
   MessageSquare, CheckCircle2, AlertCircle, Timer
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import KitchenSelectDialog from '@/components/pos/KitchenSelectDialog';
 
 type TabId = 'tables' | 'order' | 'status' | 'bill';
 
