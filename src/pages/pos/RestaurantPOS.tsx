@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { Table as TableType, TableStatus, Order, OrderItem, Product, Category, PaymentMethod } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,8 +16,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useCurrency } from '@/lib/formatCurrency';
 import {
   Users, UtensilsCrossed, Truck, ShoppingBag, Search, Plus, Minus, Trash2,
-  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft
+  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft, AlertTriangle
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import TableFloorPlan from '@/components/pos/TableFloorPlan';
 import SplitPaymentDialog, { PaymentSplit } from '@/components/pos/SplitPaymentDialog';
 import ActiveOrdersList from '@/components/pos/ActiveOrdersList';
