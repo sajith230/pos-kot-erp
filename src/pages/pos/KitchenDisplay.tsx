@@ -116,7 +116,7 @@ export default function KitchenDisplay() {
   const [todayStats, setTodayStats] = useState({ completed: 0, avgPrepTime: 0 });
   const [, setTick] = useState(0);
   const prevTicketCount = useRef(0);
-  const { business, user } = useAuth();
+  const { business, user, isAdmin } = useAuth();
 
   // Kitchen filtering
   const [assignedKitchens, setAssignedKitchens] = useState<KitchenOption[]>([]);
@@ -346,8 +346,8 @@ export default function KitchenDisplay() {
     // Filter by kitchen
     if (selectedKitchenId !== 'all') {
       filtered = filtered.filter(t => t.kitchen_id === selectedKitchenId);
-    } else if (assignedKitchens.length > 0) {
-      // If user has assigned kitchens and selected "all", show only their kitchens
+    } else if (assignedKitchens.length > 0 && !isAdmin()) {
+      // If non-admin user has assigned kitchens and selected "all", show only their kitchens
       const ids = new Set(assignedKitchens.map(k => k.id));
       filtered = filtered.filter(t => t.kitchen_id === null || ids.has(t.kitchen_id!));
     }
@@ -403,7 +403,7 @@ export default function KitchenDisplay() {
   const activeCount = filteredTickets.filter(t => t.order.status !== 'ready').length;
 
   // Determine which kitchens to show in selector
-  const kitchenOptions = assignedKitchens.length > 0 ? assignedKitchens : allKitchens;
+  const kitchenOptions = isAdmin() ? allKitchens : (assignedKitchens.length > 0 ? assignedKitchens : allKitchens);
 
   return (
     <div className="h-[calc(100vh-120px)] flex flex-col gap-3">
