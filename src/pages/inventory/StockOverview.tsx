@@ -288,34 +288,45 @@ export default function StockOverview() {
 
       {/* Adjust Stock Dialog */}
       <Dialog open={adjustDialogOpen} onOpenChange={setAdjustDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Adjust Stock: {selectedItem?.product?.name}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex items-center justify-center gap-4 p-4 bg-muted rounded-lg">
-              <span className="text-muted-foreground">Current Qty:</span>
+          <div className="space-y-5 py-2">
+            {/* Current Qty */}
+            <div className="flex items-center justify-center gap-3 py-3 bg-muted rounded-lg">
+              <span className="text-sm text-muted-foreground">Current Qty:</span>
               <span className="text-2xl font-bold">{selectedItem?.quantity}</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={adjustmentType === 'add' ? 'default' : 'outline'}
+            {/* Add / Remove Toggle */}
+            <div className="grid grid-cols-2 gap-0 border rounded-lg overflow-hidden">
+              <button
+                type="button"
                 onClick={() => setAdjustmentType('add')}
-                className="w-full"
+                className={`flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+                  adjustmentType === 'add'
+                    ? 'bg-background shadow-sm border-r'
+                    : 'bg-muted text-muted-foreground border-r hover:bg-muted/80'
+                }`}
               >
-                <Plus className="h-4 w-4 mr-2" /> Add Stock
-              </Button>
-              <Button
-                variant={adjustmentType === 'subtract' ? 'default' : 'outline'}
+                <Plus className="h-4 w-4" /> Add Stock
+              </button>
+              <button
+                type="button"
                 onClick={() => setAdjustmentType('subtract')}
-                className="w-full"
+                className={`flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-colors ${
+                  adjustmentType === 'subtract'
+                    ? 'bg-background shadow-sm ring-2 ring-primary ring-inset'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
               >
-                <Minus className="h-4 w-4 mr-2" /> Remove Stock
-              </Button>
+                <Minus className="h-4 w-4" /> Remove Stock
+              </button>
             </div>
 
-            <div>
+            {/* Quantity */}
+            <div className="space-y-1.5">
               <Label>Quantity</Label>
               <Input
                 type="number"
@@ -326,7 +337,8 @@ export default function StockOverview() {
               />
             </div>
 
-            <div>
+            {/* Reason */}
+            <div className="space-y-1.5">
               <Label>Reason</Label>
               <Select value={adjustmentReason} onValueChange={setAdjustmentReason}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -338,24 +350,28 @@ export default function StockOverview() {
               </Select>
             </div>
 
-            <div>
+            {/* Notes */}
+            <div className="space-y-1.5">
               <Label>Notes (optional)</Label>
               <Textarea
                 value={adjustmentNotes}
                 onChange={e => setAdjustmentNotes(e.target.value)}
                 placeholder="Add any additional notes..."
-                rows={2}
+                rows={3}
               />
             </div>
 
-            <div className="flex items-center justify-center gap-4 p-4 bg-muted rounded-lg">
-              <span className="text-muted-foreground">New Qty:</span>
-              <span className={`text-2xl font-bold ${adjustmentType === 'add' ? 'text-green-600' : 'text-red-600'}`}>
+            {/* New Qty Preview */}
+            <div className="flex items-center justify-center gap-3 py-3 bg-muted rounded-lg">
+              <span className="text-sm text-muted-foreground">New Qty:</span>
+              <span className={`text-2xl font-bold ${
+                adjustmentType === 'subtract' ? 'text-destructive' : 'text-emerald-600'
+              }`}>
                 {(selectedItem?.quantity || 0) + (adjustmentType === 'add' ? adjustmentQty : -adjustmentQty)}
               </span>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setAdjustDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAdjustStock} disabled={saving || adjustmentQty <= 0}>
               {saving ? 'Saving...' : 'Confirm Adjustment'}
