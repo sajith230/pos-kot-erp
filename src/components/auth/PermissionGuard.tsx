@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { ShieldX } from 'lucide-react';
+import { Loader2, ShieldX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -14,7 +14,14 @@ export function PermissionGuard({ module }: PermissionGuardProps) {
   const { canView, loading: permLoading } = usePermissions();
   const navigate = useNavigate();
 
-  if (authLoading || permLoading) return null;
+  if (authLoading || permLoading) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-background text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading module access...</p>
+      </div>
+    );
+  }
 
   if (isAdmin() || canView(module)) {
     return <Outlet />;
@@ -31,3 +38,4 @@ export function PermissionGuard({ module }: PermissionGuardProps) {
     </div>
   );
 }
+
