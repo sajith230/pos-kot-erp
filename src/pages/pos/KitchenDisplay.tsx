@@ -403,7 +403,7 @@ export default function KitchenDisplay() {
   const activeCount = filteredTickets.filter(t => t.order.status !== 'ready').length;
 
   // Determine which kitchens to show in selector
-  const kitchenOptions = assignedKitchens.length > 0 ? assignedKitchens : allKitchens;
+  const kitchenOptions = isAdmin() ? allKitchens : (assignedKitchens.length > 0 ? assignedKitchens : allKitchens);
 
   return (
     <div className="h-[calc(100vh-120px)] flex flex-col gap-3">
