@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -46,7 +46,7 @@ export default function KitchenSelectDialog({
   });
 
   // Re-init when dialog opens with new items
-  useState(() => {
+  useEffect(() => {
     const map: Record<string, string> = {};
     pendingItems.forEach(item => {
       const autoKitchen = productToKitchen.get(item.product_id);
@@ -57,7 +57,7 @@ export default function KitchenSelectDialog({
       }
     });
     setSelections(map);
-  });
+  }, [pendingItems, kitchens]);
 
   const allAssigned = useMemo(
     () => pendingItems.every(item => !!selections[item.id]),
