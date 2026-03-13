@@ -54,6 +54,10 @@ export default function StockOverview() {
   const [adjustmentReason, setAdjustmentReason] = useState('recount');
   const [adjustmentNotes, setAdjustmentNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyProductName, setHistoryProductName] = useState('');
+  const [productMovements, setProductMovements] = useState<StockMovement[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     if (business?.id) {
@@ -94,6 +98,21 @@ export default function StockOverview() {
       .order('created_at', { ascending: false })
       .limit(50);
     setMovements((data as any) || []);
+  }
+
+  async function openHistoryDialog(item: Inventory & { product: Product }) {
+    setHistoryProductName(item.product?.name || 'Unknown');
+    setHistoryDialogOpen(true);
+    setHistoryLoading(true);
+    const { data } = await supabase
+      .from('stock_movements')
+      .select('*, product:products(name)')
+      .eq('product_id', item.product_id)
+      .eq('branch_id', item.branch_id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    setProductMovements((data as any) || []);
+    setHistoryLoading(false);
   }
 
   function openAdjustDialog(item: Inventory & { product: Product }) {
@@ -230,7 +249,10 @@ export default function StockOverview() {
                           <Badge variant="secondary">In Stock</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => openHistoryDialog(item)}>
+                          <History className="h-4 w-4 mr-1" /> History
+                        </Button>
                         <PermissionButton permitted={canEdit('inventory.stock')} variant="outline" size="sm" onClick={() => openAdjustDialog(item)}>
                           <ArrowUpDown className="h-4 w-4 mr-1" /> Adjust
                         </PermissionButton>
@@ -377,6 +399,51 @@ export default function StockOverview() {
               {saving ? 'Saving...' : 'Confirm Adjustment'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Product History Dialog */}
+      <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" /> Stock History: {historyProductName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-auto max-h-[55vh]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right">Qty Change</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Notes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {historyLoading ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                ) : productMovements.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No stock movements found for this product</TableCell></TableRow>
+                ) : productMovements.map(mv => (
+                  <TableRow key={mv.id}>
+                    <TableCell className="whitespace-nowrap">{format(new Date(mv.created_at), 'dd MMM yyyy HH:mm')}</TableCell>
+                    <TableCell>
+                      <Badge variant={mv.quantity > 0 ? 'default' : 'secondary'}>
+                        {mv.movement_type.replace(/_/g, ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className={`text-right font-mono font-semibold ${mv.quantity > 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                      {mv.quantity > 0 ? '+' : ''}{mv.quantity}
+                    </TableCell>
+                    <TableCell className="capitalize">{mv.movement_type === 'sale' ? 'Sale' : (adjustmentReasons.find(r => r.value === (mv as any).reference_type)?.label || (mv as any).reference_type || '—')}</TableCell>
+                    <TableCell className="text-muted-foreground max-w-[200px] truncate">{mv.notes || '—'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
