@@ -18,6 +18,7 @@ import {
   MessageSquare, CheckCircle2, AlertCircle, Timer
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import KitchenSelectDialog from '@/components/pos/KitchenSelectDialog';
 
 type TabId = 'tables' | 'order' | 'status' | 'bill';
 
@@ -57,6 +58,12 @@ export default function WaiterMobile() {
   const [expandedOrderItems, setExpandedOrderItems] = useState<OrderItem[]>([]);
   const [paymentComplete, setPaymentComplete] = useState<{ txnNumber: string; total: number } | null>(null);
   const [showCartItems, setShowCartItems] = useState(false);
+  const [kitchenSelectOpen, setKitchenSelectOpen] = useState(false);
+  const [kitchenSelectData, setKitchenSelectData] = useState<{
+    pendingItems: OrderItem[];
+    kitchens: { id: string; name: string }[];
+    productToKitchen: Map<string, string>;
+  } | null>(null);
 
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
@@ -218,32 +225,83 @@ export default function WaiterMobile() {
       toast({ title: 'No new items', description: 'All items already sent to kitchen.' });
       return;
     }
+
+    // Fetch kitchens
+    const { data: kitchens } = await supabase
+      .from('kitchens')
+      .select('id, name')
+      .eq('branch_id', branch!.id)
+      .eq('is_active', true);
+
+    const hasKitchens = kitchens && kitchens.length > 0;
+
+    if (!hasKitchens) {
+      // Legacy: single KOT, no kitchen
+      await sendKOTWithGroups(new Map([['__none__', pendingItems]]));
+      return;
+    }
+
+    const { data: assignments } = await supabase
+      .from('kitchen_product_assignments')
+      .select('kitchen_id, product_id')
+      .in('kitchen_id', kitchens.map(k => k.id));
+
+    const productToKitchen = new Map<string, string>();
+    (assignments || []).forEach((a: any) => {
+      if (!productToKitchen.has(a.product_id)) {
+        productToKitchen.set(a.product_id, a.kitchen_id);
+      }
+    });
+
+    setKitchenSelectData({ pendingItems, kitchens, productToKitchen });
+    setKitchenSelectOpen(true);
+  }
+
+  async function sendKOTWithGroups(kitchenGroups: Map<string, OrderItem[]>) {
+    if (!activeOrder) return;
     setIsSendingKOT(true);
+    setKitchenSelectOpen(false);
+
     try {
+      const allItems = Array.from(kitchenGroups.values()).flat();
       const now = new Date().toISOString();
-      const pendingIds = pendingItems.map(i => i.id);
+      const pendingIds = allItems.map(i => i.id);
+
       await supabase.from('order_items')
         .update({ status: 'preparing' as const, sent_to_kitchen_at: now })
         .in('id', pendingIds);
 
-      const kotNumber = `KOT-${Date.now()}`;
-      const kotItems = pendingItems.map(i => ({
-        product_id: i.product_id, product_name: i.product?.name || 'Unknown',
-        quantity: i.quantity, notes: i.notes || '',
-        prep_time: i.product?.prep_time || null,
-        image_url: i.product?.image_url || null,
-      }));
-      await supabase.from('kot_tickets').insert({
-        order_id: activeOrder.id, ticket_number: kotNumber, items: kotItems,
-      });
+      for (const [kitchenId, items] of kitchenGroups) {
+        const isLegacy = kitchenId === '__none__';
+        const kotNumber = isLegacy
+          ? `KOT-${Date.now()}`
+          : `KOT-${Date.now()}-${kitchenId.slice(0, 4)}`;
+        const kotItems = items.map(i => ({
+          product_id: i.product_id,
+          product_name: i.product?.name || 'Unknown',
+          quantity: i.quantity,
+          notes: i.notes || '',
+          prep_time: i.product?.prep_time || null,
+          image_url: i.product?.image_url || null,
+        }));
+
+        await supabase.from('kot_tickets').insert({
+          order_id: activeOrder.id,
+          ticket_number: kotNumber,
+          items: kotItems,
+          ...(isLegacy ? {} : { kitchen_id: kitchenId }),
+        });
+      }
+
       await supabase.from('orders').update({ status: 'pending' as const }).eq('id', activeOrder.id);
       setOrderItems(prev => prev.map(i => pendingIds.includes(i.id) ? { ...i, status: 'preparing' as const, sent_to_kitchen_at: now } : i));
       setActiveOrder(prev => prev ? { ...prev, status: 'pending' } : prev);
-      toast({ title: 'Sent to Kitchen!', description: `${pendingItems.length} item(s) — ${kotNumber}` });
+      toast({ title: 'Sent to Kitchen!', description: `${allItems.length} item(s) sent to ${kitchenGroups.size} kitchen(s).` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {
       setIsSendingKOT(false);
+      setKitchenSelectData(null);
     }
   }
 
@@ -689,6 +747,19 @@ export default function WaiterMobile() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Kitchen Selection Dialog */}
+      {kitchenSelectData && (
+        <KitchenSelectDialog
+          open={kitchenSelectOpen}
+          onClose={() => { setKitchenSelectOpen(false); setKitchenSelectData(null); }}
+          pendingItems={kitchenSelectData.pendingItems}
+          kitchens={kitchenSelectData.kitchens}
+          productToKitchen={kitchenSelectData.productToKitchen}
+          onConfirm={sendKOTWithGroups}
+          isLoading={isSendingKOT}
+        />
+      )}
     </div>
   );
 }

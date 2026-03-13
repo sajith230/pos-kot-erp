@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
+import KitchenSelectDialog from '@/components/pos/KitchenSelectDialog';
 import { Table as TableType, TableStatus, Order, OrderItem, Product, Category, PaymentMethod } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCurrency } from '@/lib/formatCurrency';
 import {
   Users, UtensilsCrossed, Truck, ShoppingBag, Search, Plus, Minus, Trash2,
-  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft, AlertTriangle
+  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TableFloorPlan from '@/components/pos/TableFloorPlan';
@@ -40,8 +40,12 @@ export default function RestaurantPOS() {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isSendingKOT, setIsSendingKOT] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [unassignedAlert, setUnassignedAlert] = useState<string[]>([]);
-  const [unassignedAlertOpen, setUnassignedAlertOpen] = useState(false);
+  const [kitchenSelectOpen, setKitchenSelectOpen] = useState(false);
+  const [kitchenSelectData, setKitchenSelectData] = useState<{
+    pendingItems: OrderItem[];
+    kitchens: { id: string; name: string }[];
+    productToKitchen: Map<string, string>;
+  } | null>(null);
 
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
@@ -250,96 +254,60 @@ export default function RestaurantPOS() {
       return;
     }
 
+    // Fetch kitchens for this branch
+    const { data: kitchens } = await supabase
+      .from('kitchens')
+      .select('id, name')
+      .eq('branch_id', branch!.id)
+      .eq('is_active', true);
+
+    const hasKitchens = kitchens && kitchens.length > 0;
+
+    if (!hasKitchens) {
+      // No kitchens configured — send as single KOT (legacy behavior)
+      await sendKOTWithGroups(new Map([['__none__', pendingItems]]));
+      return;
+    }
+
+    // Build auto-assignment map
+    const { data: assignments } = await supabase
+      .from('kitchen_product_assignments')
+      .select('kitchen_id, product_id')
+      .in('kitchen_id', kitchens.map(k => k.id));
+
+    const productToKitchen = new Map<string, string>();
+    (assignments || []).forEach((a: any) => {
+      if (!productToKitchen.has(a.product_id)) {
+        productToKitchen.set(a.product_id, a.kitchen_id);
+      }
+    });
+
+    // Open the kitchen selection dialog
+    setKitchenSelectData({ pendingItems, kitchens, productToKitchen });
+    setKitchenSelectOpen(true);
+  }
+
+  async function sendKOTWithGroups(kitchenGroups: Map<string, OrderItem[]>) {
+    if (!activeOrder) return;
     setIsSendingKOT(true);
+    setKitchenSelectOpen(false);
+
     try {
-      // Fetch kitchen product assignments to determine routing
-      const { data: kitchens } = await supabase
-        .from('kitchens')
-        .select('id, name')
-        .eq('branch_id', branch!.id)
-        .eq('is_active', true);
+      const allItems = Array.from(kitchenGroups.values()).flat();
+      const now = new Date().toISOString();
+      const pendingIds = allItems.map(i => i.id);
 
-      const hasKitchens = kitchens && kitchens.length > 0;
+      await supabase
+        .from('order_items')
+        .update({ status: 'preparing' as const, sent_to_kitchen_at: now })
+        .in('id', pendingIds);
 
-      if (hasKitchens) {
-        const { data: assignments } = await supabase
-          .from('kitchen_product_assignments')
-          .select('kitchen_id, product_id')
-          .in('kitchen_id', kitchens.map(k => k.id));
-
-        // Map each product to its first assigned kitchen (avoid overwriting if assigned to multiple)
-        const productToKitchen = new Map<string, string>();
-        (assignments || []).forEach((a: any) => {
-          if (!productToKitchen.has(a.product_id)) {
-            productToKitchen.set(a.product_id, a.kitchen_id);
-          }
-        });
-
-        // Check for unassigned products
-        const unassigned = pendingItems.filter(i => !productToKitchen.has(i.product_id));
-        if (unassigned.length > 0) {
-          setUnassignedAlert(unassigned.map(i => i.product?.name || 'Unknown'));
-          setUnassignedAlertOpen(true);
-          setIsSendingKOT(false);
-          return;
-        }
-
-        // Group items by kitchen
-        const kitchenGroups = new Map<string, typeof pendingItems>();
-        pendingItems.forEach(item => {
-          const kitchenId = productToKitchen.get(item.product_id)!;
-          if (!kitchenGroups.has(kitchenId)) kitchenGroups.set(kitchenId, []);
-          kitchenGroups.get(kitchenId)!.push(item);
-        });
-
-        const now = new Date().toISOString();
-        const pendingIds = pendingItems.map(i => i.id);
-
-        await supabase
-          .from('order_items')
-          .update({ status: 'preparing' as const, sent_to_kitchen_at: now })
-          .in('id', pendingIds);
-
-        // Create one KOT ticket per kitchen
-        for (const [kitchenId, items] of kitchenGroups) {
-          const kotNumber = `KOT-${Date.now()}-${kitchenId.slice(0, 4)}`;
-          const kotItems = items.map(i => ({
-            product_id: i.product_id,
-            product_name: i.product?.name || 'Unknown',
-            quantity: i.quantity,
-            notes: i.notes || '',
-            prep_time: i.product?.prep_time || null,
-            image_url: i.product?.image_url || null,
-          }));
-
-          await supabase.from('kot_tickets').insert({
-            order_id: activeOrder.id,
-            ticket_number: kotNumber,
-            items: kotItems,
-            kitchen_id: kitchenId,
-          });
-        }
-
-        await supabase.from('orders').update({ status: 'pending' as const }).eq('id', activeOrder.id);
-
-        setOrderItems(prev =>
-          prev.map(i => pendingIds.includes(i.id) ? { ...i, status: 'preparing' as const, sent_to_kitchen_at: now } : i)
-        );
-        setActiveOrder(prev => prev ? { ...prev, status: 'pending' } : prev);
-
-        toast({ title: 'Sent to Kitchen!', description: `${pendingItems.length} item(s) sent to ${kitchenGroups.size} kitchen(s).` });
-      } else {
-        // No kitchens configured — send as single KOT (legacy behavior)
-        const now = new Date().toISOString();
-        const pendingIds = pendingItems.map(i => i.id);
-
-        await supabase
-          .from('order_items')
-          .update({ status: 'preparing' as const, sent_to_kitchen_at: now })
-          .in('id', pendingIds);
-
-        const kotNumber = `KOT-${Date.now()}`;
-        const kotItems = pendingItems.map(i => ({
+      for (const [kitchenId, items] of kitchenGroups) {
+        const isLegacy = kitchenId === '__none__';
+        const kotNumber = isLegacy
+          ? `KOT-${Date.now()}`
+          : `KOT-${Date.now()}-${kitchenId.slice(0, 4)}`;
+        const kotItems = items.map(i => ({
           product_id: i.product_id,
           product_name: i.product?.name || 'Unknown',
           quantity: i.quantity,
@@ -352,21 +320,23 @@ export default function RestaurantPOS() {
           order_id: activeOrder.id,
           ticket_number: kotNumber,
           items: kotItems,
+          ...(isLegacy ? {} : { kitchen_id: kitchenId }),
         });
-
-        await supabase.from('orders').update({ status: 'pending' as const }).eq('id', activeOrder.id);
-
-        setOrderItems(prev =>
-          prev.map(i => pendingIds.includes(i.id) ? { ...i, status: 'preparing' as const, sent_to_kitchen_at: now } : i)
-        );
-        setActiveOrder(prev => prev ? { ...prev, status: 'pending' } : prev);
-
-        toast({ title: 'Sent to Kitchen!', description: `${pendingItems.length} item(s) sent. KOT: ${kotNumber}` });
       }
+
+      await supabase.from('orders').update({ status: 'pending' as const }).eq('id', activeOrder.id);
+
+      setOrderItems(prev =>
+        prev.map(i => pendingIds.includes(i.id) ? { ...i, status: 'preparing' as const, sent_to_kitchen_at: now } : i)
+      );
+      setActiveOrder(prev => prev ? { ...prev, status: 'pending' } : prev);
+
+      toast({ title: 'Sent to Kitchen!', description: `${allItems.length} item(s) sent to ${kitchenGroups.size} kitchen(s).` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {
       setIsSendingKOT(false);
+      setKitchenSelectData(null);
     }
   }
 
@@ -742,35 +712,18 @@ export default function RestaurantPOS() {
         isProcessing={isProcessingPayment}
       />
 
-      {/* Unassigned Products Alert */}
-      <AlertDialog open={unassignedAlertOpen} onOpenChange={setUnassignedAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              Products Not Assigned to a Kitchen
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div>
-                <p className="mb-3">
-                  The following products have not been assigned to any kitchen. Please assign them before sending the KOT.
-                </p>
-                <ul className="list-disc pl-5 space-y-1">
-                  {unassignedAlert.map((name, i) => (
-                    <li key={i} className="font-medium text-foreground">{name}</li>
-                  ))}
-                </ul>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Close</AlertDialogCancel>
-            <Button onClick={() => { setUnassignedAlertOpen(false); navigate('/settings/kitchens'); }}>
-              Go to Kitchen Management
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Kitchen Selection Dialog */}
+      {kitchenSelectData && (
+        <KitchenSelectDialog
+          open={kitchenSelectOpen}
+          onClose={() => { setKitchenSelectOpen(false); setKitchenSelectData(null); }}
+          pendingItems={kitchenSelectData.pendingItems}
+          kitchens={kitchenSelectData.kitchens}
+          productToKitchen={kitchenSelectData.productToKitchen}
+          onConfirm={sendKOTWithGroups}
+          isLoading={isSendingKOT}
+        />
+      )}
     </div>
   );
 }
