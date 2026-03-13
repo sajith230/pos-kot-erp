@@ -249,7 +249,10 @@ export default function StockOverview() {
                           <Badge variant="secondary">In Stock</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => openHistoryDialog(item)}>
+                          <History className="h-4 w-4 mr-1" /> History
+                        </Button>
                         <PermissionButton permitted={canEdit('inventory.stock')} variant="outline" size="sm" onClick={() => openAdjustDialog(item)}>
                           <ArrowUpDown className="h-4 w-4 mr-1" /> Adjust
                         </PermissionButton>
