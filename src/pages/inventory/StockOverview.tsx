@@ -100,6 +100,21 @@ export default function StockOverview() {
     setMovements((data as any) || []);
   }
 
+  async function openHistoryDialog(item: Inventory & { product: Product }) {
+    setHistoryProductName(item.product?.name || 'Unknown');
+    setHistoryDialogOpen(true);
+    setHistoryLoading(true);
+    const { data } = await supabase
+      .from('stock_movements')
+      .select('*, product:products(name)')
+      .eq('product_id', item.product_id)
+      .eq('branch_id', item.branch_id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    setProductMovements((data as any) || []);
+    setHistoryLoading(false);
+  }
+
   function openAdjustDialog(item: Inventory & { product: Product }) {
     setSelectedItem(item);
     setAdjustmentType('add');
