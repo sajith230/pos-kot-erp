@@ -252,38 +252,112 @@ export default function RestaurantPOS() {
 
     setIsSendingKOT(true);
     try {
-      const now = new Date().toISOString();
-      const pendingIds = pendingItems.map(i => i.id);
+      // Fetch kitchen product assignments to determine routing
+      const { data: kitchens } = await supabase
+        .from('kitchens')
+        .select('id, name')
+        .eq('branch_id', branch!.id)
+        .eq('is_active', true);
 
-      await supabase
-        .from('order_items')
-        .update({ status: 'preparing' as const, sent_to_kitchen_at: now })
-        .in('id', pendingIds);
+      const hasKitchens = kitchens && kitchens.length > 0;
 
-      const kotNumber = `KOT-${Date.now()}`;
-      const kotItems = pendingItems.map(i => ({
-        product_id: i.product_id,
-        product_name: i.product?.name || 'Unknown',
-        quantity: i.quantity,
-        notes: i.notes || '',
-        prep_time: i.product?.prep_time || null,
-        image_url: i.product?.image_url || null,
-      }));
+      if (hasKitchens) {
+        const { data: assignments } = await supabase
+          .from('kitchen_product_assignments')
+          .select('kitchen_id, product_id')
+          .in('kitchen_id', kitchens.map(k => k.id));
 
-      await supabase.from('kot_tickets').insert({
-        order_id: activeOrder.id,
-        ticket_number: kotNumber,
-        items: kotItems,
-      });
+        const productToKitchen = new Map<string, string>();
+        (assignments || []).forEach((a: any) => productToKitchen.set(a.product_id, a.kitchen_id));
 
-      await supabase.from('orders').update({ status: 'pending' as const }).eq('id', activeOrder.id);
+        // Check for unassigned products
+        const unassigned = pendingItems.filter(i => !productToKitchen.has(i.product_id));
+        if (unassigned.length > 0) {
+          setUnassignedAlert(unassigned.map(i => i.product?.name || 'Unknown'));
+          setUnassignedAlertOpen(true);
+          setIsSendingKOT(false);
+          return;
+        }
 
-      setOrderItems(prev =>
-        prev.map(i => pendingIds.includes(i.id) ? { ...i, status: 'preparing' as const, sent_to_kitchen_at: now } : i)
-      );
-      setActiveOrder(prev => prev ? { ...prev, status: 'pending' } : prev);
+        // Group items by kitchen
+        const kitchenGroups = new Map<string, typeof pendingItems>();
+        pendingItems.forEach(item => {
+          const kitchenId = productToKitchen.get(item.product_id)!;
+          if (!kitchenGroups.has(kitchenId)) kitchenGroups.set(kitchenId, []);
+          kitchenGroups.get(kitchenId)!.push(item);
+        });
 
-      toast({ title: 'Sent to Kitchen!', description: `${pendingItems.length} item(s) sent. KOT: ${kotNumber}` });
+        const now = new Date().toISOString();
+        const pendingIds = pendingItems.map(i => i.id);
+
+        await supabase
+          .from('order_items')
+          .update({ status: 'preparing' as const, sent_to_kitchen_at: now })
+          .in('id', pendingIds);
+
+        // Create one KOT ticket per kitchen
+        for (const [kitchenId, items] of kitchenGroups) {
+          const kotNumber = `KOT-${Date.now()}-${kitchenId.slice(0, 4)}`;
+          const kotItems = items.map(i => ({
+            product_id: i.product_id,
+            product_name: i.product?.name || 'Unknown',
+            quantity: i.quantity,
+            notes: i.notes || '',
+            prep_time: i.product?.prep_time || null,
+            image_url: i.product?.image_url || null,
+          }));
+
+          await supabase.from('kot_tickets').insert({
+            order_id: activeOrder.id,
+            ticket_number: kotNumber,
+            items: kotItems,
+            kitchen_id: kitchenId,
+          });
+        }
+
+        await supabase.from('orders').update({ status: 'pending' as const }).eq('id', activeOrder.id);
+
+        setOrderItems(prev =>
+          prev.map(i => pendingIds.includes(i.id) ? { ...i, status: 'preparing' as const, sent_to_kitchen_at: now } : i)
+        );
+        setActiveOrder(prev => prev ? { ...prev, status: 'pending' } : prev);
+
+        toast({ title: 'Sent to Kitchen!', description: `${pendingItems.length} item(s) sent to ${kitchenGroups.size} kitchen(s).` });
+      } else {
+        // No kitchens configured — send as single KOT (legacy behavior)
+        const now = new Date().toISOString();
+        const pendingIds = pendingItems.map(i => i.id);
+
+        await supabase
+          .from('order_items')
+          .update({ status: 'preparing' as const, sent_to_kitchen_at: now })
+          .in('id', pendingIds);
+
+        const kotNumber = `KOT-${Date.now()}`;
+        const kotItems = pendingItems.map(i => ({
+          product_id: i.product_id,
+          product_name: i.product?.name || 'Unknown',
+          quantity: i.quantity,
+          notes: i.notes || '',
+          prep_time: i.product?.prep_time || null,
+          image_url: i.product?.image_url || null,
+        }));
+
+        await supabase.from('kot_tickets').insert({
+          order_id: activeOrder.id,
+          ticket_number: kotNumber,
+          items: kotItems,
+        });
+
+        await supabase.from('orders').update({ status: 'pending' as const }).eq('id', activeOrder.id);
+
+        setOrderItems(prev =>
+          prev.map(i => pendingIds.includes(i.id) ? { ...i, status: 'preparing' as const, sent_to_kitchen_at: now } : i)
+        );
+        setActiveOrder(prev => prev ? { ...prev, status: 'pending' } : prev);
+
+        toast({ title: 'Sent to Kitchen!', description: `${pendingItems.length} item(s) sent. KOT: ${kotNumber}` });
+      }
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {
