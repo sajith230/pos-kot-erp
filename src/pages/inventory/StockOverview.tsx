@@ -401,6 +401,51 @@ export default function StockOverview() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Product History Dialog */}
+      <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" /> Stock History: {historyProductName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-auto max-h-[55vh]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right">Qty Change</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Notes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {historyLoading ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+                ) : productMovements.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No stock movements found for this product</TableCell></TableRow>
+                ) : productMovements.map(mv => (
+                  <TableRow key={mv.id}>
+                    <TableCell className="whitespace-nowrap">{format(new Date(mv.created_at), 'dd MMM yyyy HH:mm')}</TableCell>
+                    <TableCell>
+                      <Badge variant={mv.quantity > 0 ? 'default' : 'secondary'}>
+                        {mv.movement_type.replace(/_/g, ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className={`text-right font-mono font-semibold ${mv.quantity > 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                      {mv.quantity > 0 ? '+' : ''}{mv.quantity}
+                    </TableCell>
+                    <TableCell className="capitalize">{mv.movement_type === 'sale' ? 'Sale' : (adjustmentReasons.find(r => r.value === (mv as any).reference_type)?.label || (mv as any).reference_type || '—')}</TableCell>
+                    <TableCell className="text-muted-foreground max-w-[200px] truncate">{mv.notes || '—'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
