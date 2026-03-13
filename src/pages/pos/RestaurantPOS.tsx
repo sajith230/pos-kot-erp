@@ -267,8 +267,13 @@ export default function RestaurantPOS() {
           .select('kitchen_id, product_id')
           .in('kitchen_id', kitchens.map(k => k.id));
 
+        // Map each product to its first assigned kitchen (avoid overwriting if assigned to multiple)
         const productToKitchen = new Map<string, string>();
-        (assignments || []).forEach((a: any) => productToKitchen.set(a.product_id, a.kitchen_id));
+        (assignments || []).forEach((a: any) => {
+          if (!productToKitchen.has(a.product_id)) {
+            productToKitchen.set(a.product_id, a.kitchen_id);
+          }
+        });
 
         // Check for unassigned products
         const unassigned = pendingItems.filter(i => !productToKitchen.has(i.product_id));
