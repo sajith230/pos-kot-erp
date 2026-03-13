@@ -303,11 +303,119 @@ export type Database = {
           },
         ]
       }
+      kitchen_product_assignments: {
+        Row: {
+          id: string
+          kitchen_id: string
+          product_id: string
+        }
+        Insert: {
+          id?: string
+          kitchen_id: string
+          product_id: string
+        }
+        Update: {
+          id?: string
+          kitchen_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kitchen_product_assignments_kitchen_id_fkey"
+            columns: ["kitchen_id"]
+            isOneToOne: false
+            referencedRelation: "kitchens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kitchen_product_assignments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kitchen_user_assignments: {
+        Row: {
+          id: string
+          kitchen_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          kitchen_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          kitchen_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kitchen_user_assignments_kitchen_id_fkey"
+            columns: ["kitchen_id"]
+            isOneToOne: false
+            referencedRelation: "kitchens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kitchens: {
+        Row: {
+          branch_id: string
+          business_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          business_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          business_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kitchens_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kitchens_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kot_tickets: {
         Row: {
           created_at: string
           id: string
           items: Json
+          kitchen_id: string | null
           order_id: string
           printed_at: string | null
           ticket_number: string
@@ -316,6 +424,7 @@ export type Database = {
           created_at?: string
           id?: string
           items: Json
+          kitchen_id?: string | null
           order_id: string
           printed_at?: string | null
           ticket_number: string
@@ -324,11 +433,19 @@ export type Database = {
           created_at?: string
           id?: string
           items?: Json
+          kitchen_id?: string | null
           order_id?: string
           printed_at?: string | null
           ticket_number?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "kot_tickets_kitchen_id_fkey"
+            columns: ["kitchen_id"]
+            isOneToOne: false
+            referencedRelation: "kitchens"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "kot_tickets_order_id_fkey"
             columns: ["order_id"]
