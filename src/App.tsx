@@ -24,6 +24,7 @@ import Reports from "./pages/reports/Reports";
 import GeneralSettings from "./pages/settings/GeneralSettings";
 import UserManagement from "./pages/settings/UserManagement";
 import RoleManagement from "./pages/settings/RoleManagement";
+import KitchenManagement from "./pages/settings/KitchenManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -92,6 +93,9 @@ const App = () => (
               </Route>
               <Route element={<PermissionGuard module="settings.roles" />}>
                 <Route path="/settings/roles" element={<RoleManagement />} />
+              </Route>
+              <Route element={<PermissionGuard module="settings.general" />}>
+                <Route path="/settings/kitchens" element={<KitchenManagement />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />

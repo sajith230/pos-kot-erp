@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -25,6 +26,7 @@ interface KOTTicketData {
   id: string;
   ticket_number: string;
   order_id: string;
+  kitchen_id: string | null;
   items: KOTItem[];
   printed_at: string | null;
   created_at: string;
@@ -38,6 +40,11 @@ interface KOTTicketData {
     created_at: string;
     table: { name: string } | null;
   };
+}
+
+interface KitchenOption {
+  id: string;
+  name: string;
 }
 
 type LaneStatus = 'pending' | 'preparing' | 'ready';
@@ -109,7 +116,55 @@ export default function KitchenDisplay() {
   const [todayStats, setTodayStats] = useState({ completed: 0, avgPrepTime: 0 });
   const [, setTick] = useState(0);
   const prevTicketCount = useRef(0);
-  const { business } = useAuth();
+  const { business, user } = useAuth();
+
+  // Kitchen filtering
+  const [assignedKitchens, setAssignedKitchens] = useState<KitchenOption[]>([]);
+  const [allKitchens, setAllKitchens] = useState<KitchenOption[]>([]);
+  const [selectedKitchenId, setSelectedKitchenId] = useState<string>('all');
+  const [kitchensLoaded, setKitchensLoaded] = useState(false);
+
+  // Fetch kitchens assigned to the current user
+  const fetchKitchens = useCallback(async () => {
+    if (!business?.id || !user?.id) return;
+
+    const { data: allK } = await supabase
+      .from('kitchens')
+      .select('id, name')
+      .eq('business_id', business.id)
+      .eq('is_active', true)
+      .order('name');
+
+    const kitchenList = (allK || []) as KitchenOption[];
+    setAllKitchens(kitchenList);
+
+    if (kitchenList.length === 0) {
+      // No kitchens configured — show all tickets
+      setAssignedKitchens([]);
+      setSelectedKitchenId('all');
+      setKitchensLoaded(true);
+      return;
+    }
+
+    const { data: userAssignments } = await supabase
+      .from('kitchen_user_assignments')
+      .select('kitchen_id')
+      .eq('user_id', user.id);
+
+    const assignedIds = new Set((userAssignments || []).map((a: any) => a.kitchen_id));
+    const assigned = kitchenList.filter(k => assignedIds.has(k.id));
+    setAssignedKitchens(assigned);
+
+    if (assigned.length === 1) {
+      setSelectedKitchenId(assigned[0].id);
+    } else if (assigned.length === 0) {
+      // User not assigned to any kitchen — show all (admin view)
+      setSelectedKitchenId('all');
+    } else {
+      setSelectedKitchenId('all');
+    }
+    setKitchensLoaded(true);
+  }, [business?.id, user?.id]);
 
   const fetchTickets = useCallback(async () => {
     if (!business?.id) return;
@@ -183,6 +238,7 @@ export default function KitchenDisplay() {
   useEffect(() => {
     if (!business?.id) return;
 
+    fetchKitchens();
     fetchTickets();
     fetchTodayStats();
 
@@ -204,7 +260,7 @@ export default function KitchenDisplay() {
       clearInterval(timer);
       clearInterval(statsTimer);
     };
-  }, [business?.id, fetchTickets, fetchTodayStats]);
+  }, [business?.id, fetchTickets, fetchTodayStats, fetchKitchens]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -285,8 +341,23 @@ export default function KitchenDisplay() {
   }
 
   function getFilteredTickets(): KOTTicketData[] {
-    if (orderTypeFilter === 'all') return tickets;
-    return tickets.filter(t => t.order.order_type === orderTypeFilter);
+    let filtered = tickets;
+
+    // Filter by kitchen
+    if (selectedKitchenId !== 'all') {
+      filtered = filtered.filter(t => t.kitchen_id === selectedKitchenId);
+    } else if (assignedKitchens.length > 0) {
+      // If user has assigned kitchens and selected "all", show only their kitchens
+      const ids = new Set(assignedKitchens.map(k => k.id));
+      filtered = filtered.filter(t => t.kitchen_id === null || ids.has(t.kitchen_id!));
+    }
+
+    // Filter by order type
+    if (orderTypeFilter !== 'all') {
+      filtered = filtered.filter(t => t.order.order_type === orderTypeFilter);
+    }
+
+    return filtered;
   }
 
   function getTicketsByOrderStatus(status: LaneStatus): KOTTicketData[] {
@@ -302,6 +373,10 @@ export default function KitchenDisplay() {
       });
     }
   }
+
+  const selectedKitchenName = selectedKitchenId === 'all'
+    ? null
+    : allKitchens.find(k => k.id === selectedKitchenId)?.name;
 
   if (!business) {
     return (
@@ -327,6 +402,9 @@ export default function KitchenDisplay() {
   const filteredTickets = getFilteredTickets();
   const activeCount = filteredTickets.filter(t => t.order.status !== 'ready').length;
 
+  // Determine which kitchens to show in selector
+  const kitchenOptions = assignedKitchens.length > 0 ? assignedKitchens : allKitchens;
+
   return (
     <div className="h-[calc(100vh-120px)] flex flex-col gap-3">
       {/* Header */}
@@ -335,6 +413,11 @@ export default function KitchenDisplay() {
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <ChefHat className="h-6 w-6" />
             Kitchen Display
+            {selectedKitchenName && (
+              <Badge variant="secondary" className="text-sm font-normal ml-1">
+                {selectedKitchenName}
+              </Badge>
+            )}
           </h1>
           <p className="text-muted-foreground text-sm">
             {filteredTickets.length} active ticket{filteredTickets.length !== 1 ? 's' : ''} •
@@ -342,6 +425,22 @@ export default function KitchenDisplay() {
           </p>
         </div>
         <div className="flex gap-2">
+          {/* Kitchen Selector */}
+          {kitchenOptions.length > 0 && (
+            <Select value={selectedKitchenId} onValueChange={setSelectedKitchenId}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select kitchen" />
+              </SelectTrigger>
+              <SelectContent>
+                {kitchenOptions.length > 1 && (
+                  <SelectItem value="all">All Kitchens</SelectItem>
+                )}
+                {kitchenOptions.map(k => (
+                  <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button
             variant="outline"
             size="icon"

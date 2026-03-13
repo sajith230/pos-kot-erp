@@ -72,6 +72,7 @@ const settingsNavItems: NavItem[] = [
   { title: 'General', url: '/settings', icon: Settings, module: 'settings.general' },
   { title: 'Users', url: '/settings/users', icon: UserCog, module: 'settings.users' },
   { title: 'Roles', url: '/settings/roles', icon: Shield, module: 'settings.roles' },
+  { title: 'Kitchens', url: '/settings/kitchens', icon: ChefHat, module: 'settings.general' },
 ];
 
 export function AppSidebar() {
