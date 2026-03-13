@@ -40,6 +40,8 @@ export default function RestaurantPOS() {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isSendingKOT, setIsSendingKOT] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [unassignedAlert, setUnassignedAlert] = useState<string[]>([]);
+  const [unassignedAlertOpen, setUnassignedAlertOpen] = useState(false);
 
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
