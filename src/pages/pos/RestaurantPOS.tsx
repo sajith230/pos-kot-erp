@@ -46,6 +46,7 @@ export default function RestaurantPOS() {
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
   const { format: fc } = useCurrency();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (business?.id && branch?.id) {
