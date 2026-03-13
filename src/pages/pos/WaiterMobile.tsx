@@ -58,6 +58,12 @@ export default function WaiterMobile() {
   const [expandedOrderItems, setExpandedOrderItems] = useState<OrderItem[]>([]);
   const [paymentComplete, setPaymentComplete] = useState<{ txnNumber: string; total: number } | null>(null);
   const [showCartItems, setShowCartItems] = useState(false);
+  const [kitchenSelectOpen, setKitchenSelectOpen] = useState(false);
+  const [kitchenSelectData, setKitchenSelectData] = useState<{
+    pendingItems: OrderItem[];
+    kitchens: { id: string; name: string }[];
+    productToKitchen: Map<string, string>;
+  } | null>(null);
 
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
