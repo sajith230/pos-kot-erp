@@ -54,6 +54,10 @@ export default function StockOverview() {
   const [adjustmentReason, setAdjustmentReason] = useState('recount');
   const [adjustmentNotes, setAdjustmentNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyProductName, setHistoryProductName] = useState('');
+  const [productMovements, setProductMovements] = useState<StockMovement[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     if (business?.id) {
