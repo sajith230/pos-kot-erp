@@ -747,6 +747,19 @@ export default function WaiterMobile() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Kitchen Selection Dialog */}
+      {kitchenSelectData && (
+        <KitchenSelectDialog
+          open={kitchenSelectOpen}
+          onClose={() => { setKitchenSelectOpen(false); setKitchenSelectData(null); }}
+          pendingItems={kitchenSelectData.pendingItems}
+          kitchens={kitchenSelectData.kitchens}
+          productToKitchen={kitchenSelectData.productToKitchen}
+          onConfirm={sendKOTWithGroups}
+          isLoading={isSendingKOT}
+        />
+      )}
     </div>
   );
 }
