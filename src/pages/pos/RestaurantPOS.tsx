@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCurrency } from '@/lib/formatCurrency';
 import {
   Users, UtensilsCrossed, Truck, ShoppingBag, Search, Plus, Minus, Trash2,
-  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft, AlertTriangle
+  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TableFloorPlan from '@/components/pos/TableFloorPlan';
