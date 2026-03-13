@@ -116,7 +116,7 @@ export default function KitchenDisplay() {
   const [todayStats, setTodayStats] = useState({ completed: 0, avgPrepTime: 0 });
   const [, setTick] = useState(0);
   const prevTicketCount = useRef(0);
-  const { business, user } = useAuth();
+  const { business, user, isAdmin } = useAuth();
 
   // Kitchen filtering
   const [assignedKitchens, setAssignedKitchens] = useState<KitchenOption[]>([]);
