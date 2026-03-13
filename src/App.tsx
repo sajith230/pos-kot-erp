@@ -24,6 +24,7 @@ import Reports from "./pages/reports/Reports";
 import GeneralSettings from "./pages/settings/GeneralSettings";
 import UserManagement from "./pages/settings/UserManagement";
 import RoleManagement from "./pages/settings/RoleManagement";
+import KitchenManagement from "./pages/settings/KitchenManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
