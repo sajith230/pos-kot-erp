@@ -94,6 +94,9 @@ const App = () => (
               <Route element={<PermissionGuard module="settings.roles" />}>
                 <Route path="/settings/roles" element={<RoleManagement />} />
               </Route>
+              <Route element={<PermissionGuard module="settings.general" />}>
+                <Route path="/settings/kitchens" element={<KitchenManagement />} />
+              </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
