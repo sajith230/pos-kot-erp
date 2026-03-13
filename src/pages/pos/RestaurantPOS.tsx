@@ -736,6 +736,36 @@ export default function RestaurantPOS() {
         onComplete={handlePayment}
         isProcessing={isProcessingPayment}
       />
+
+      {/* Unassigned Products Alert */}
+      <AlertDialog open={unassignedAlertOpen} onOpenChange={setUnassignedAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              Products Not Assigned to a Kitchen
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p className="mb-3">
+                  The following products have not been assigned to any kitchen. Please assign them before sending the KOT.
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  {unassignedAlert.map((name, i) => (
+                    <li key={i} className="font-medium text-foreground">{name}</li>
+                  ))}
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+            <Button onClick={() => { setUnassignedAlertOpen(false); navigate('/settings/kitchens'); }}>
+              Go to Kitchen Management
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
