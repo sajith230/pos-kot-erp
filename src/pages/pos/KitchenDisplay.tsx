@@ -346,8 +346,8 @@ export default function KitchenDisplay() {
     // Filter by kitchen
     if (selectedKitchenId !== 'all') {
       filtered = filtered.filter(t => t.kitchen_id === selectedKitchenId);
-    } else if (assignedKitchens.length > 0) {
-      // If user has assigned kitchens and selected "all", show only their kitchens
+    } else if (assignedKitchens.length > 0 && !isAdmin()) {
+      // If non-admin user has assigned kitchens and selected "all", show only their kitchens
       const ids = new Set(assignedKitchens.map(k => k.id));
       filtered = filtered.filter(t => t.kitchen_id === null || ids.has(t.kitchen_id!));
     }
