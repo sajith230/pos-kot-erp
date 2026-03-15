@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import BarcodeScanner from '@/components/barcode/BarcodeScanner';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
