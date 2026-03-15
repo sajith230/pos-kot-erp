@@ -568,7 +568,15 @@ export default function Products() {
                   <div><Label>SKU</Label><Input value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Barcode</Label><Input value={form.barcode} onChange={e => setForm({ ...form, barcode: e.target.value })} /></div>
+                  <div>
+                    <Label>Barcode</Label>
+                    <div className="flex gap-1">
+                      <Input value={form.barcode} onChange={e => setForm({ ...form, barcode: e.target.value })} className="flex-1" />
+                      <Button type="button" variant="outline" size="icon" onClick={() => { setBarcodeScanTarget('field'); setIsCameraScannerOpen(true); }} title="Scan barcode">
+                        <Camera className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                   <div><Label>Unit</Label><Input value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
