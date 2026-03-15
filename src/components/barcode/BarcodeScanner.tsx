@@ -122,13 +122,13 @@ export default function BarcodeScanner({ open, onOpenChange, onScan, continuous 
 
   useEffect(() => {
     if (open) {
-      // Small delay to ensure DOM element is mounted
-      const timer = setTimeout(() => startScanner(), 300);
+      // Longer delay on mobile to ensure DOM is fully mounted
+      const timer = setTimeout(() => startScanner(), 500);
       return () => clearTimeout(timer);
     } else {
       stopScanner();
     }
-  }, [open]);
+  }, [open, startScanner, stopScanner]);
 
   // Cleanup on unmount
   useEffect(() => {
