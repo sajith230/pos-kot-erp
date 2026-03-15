@@ -97,11 +97,43 @@ export default function StockOverview() {
 
   async function fetchInventory() {
     setLoading(true);
-    const { data } = await supabase
+    const { data: invData } = await supabase
       .from('inventory')
       .select('*, product:products(*)')
       .order('quantity', { ascending: true });
-    setInventory((data as any) || []);
+
+    const inventoryItems = (invData as any) || [];
+    const existingProductIds = new Set(inventoryItems.map((i: any) => i.product_id));
+
+    // Fetch trackable products missing from inventory and auto-create records
+    if (branch?.id) {
+      const { data: allProducts } = await supabase
+        .from('products')
+        .select('*')
+        .eq('track_inventory', true)
+        .eq('is_active', true);
+
+      const missingProducts = (allProducts || []).filter((p: any) => !existingProductIds.has(p.id));
+
+      if (missingProducts.length > 0) {
+        const newRows = missingProducts.map((p: any) => ({
+          product_id: p.id,
+          branch_id: branch.id,
+          quantity: 0,
+        }));
+        await supabase.from('inventory').insert(newRows);
+        // Re-fetch to get complete data with joins
+        const { data: refreshed } = await supabase
+          .from('inventory')
+          .select('*, product:products(*)')
+          .order('quantity', { ascending: true });
+        setInventory((refreshed as any) || []);
+        setLoading(false);
+        return;
+      }
+    }
+
+    setInventory(inventoryItems);
     setLoading(false);
   }
 

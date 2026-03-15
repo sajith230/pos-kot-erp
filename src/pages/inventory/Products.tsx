@@ -385,6 +385,15 @@ export default function Products() {
       await saveRecipes(productId);
     }
 
+    // Auto-create inventory record for new trackable products
+    if (!editing && productId && branch?.id && form.min_stock !== undefined) {
+      await supabase.from('inventory').insert({
+        product_id: productId,
+        branch_id: branch.id,
+        quantity: 0,
+      });
+    }
+
     toast({ title: editing ? 'Product Updated' : 'Product Created' });
     setDialogOpen(false);
     fetchProducts();
