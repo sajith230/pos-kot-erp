@@ -51,60 +51,84 @@ export default function BarcodeScanner({ open, onOpenChange, onScan, continuous 
     setError(null);
 
     try {
-      const devices = await Html5Qrcode.getCameras();
-      if (devices.length === 0) {
-        setError('No camera found on this device.');
-        return;
+      // On mobile, getCameras() may fail without prior permission.
+      // Try enumerating first; if it fails, use facingMode fallback.
+      let devices: { id: string; label: string }[] = [];
+      try {
+        devices = await Html5Qrcode.getCameras();
+      } catch {
+        // Permission not yet granted — we'll use facingMode instead
       }
       setCameras(devices);
 
       const scanner = new Html5Qrcode(containerRef.current);
       scannerRef.current = scanner;
 
-      const selectedCamera = cameraId || devices.find(d => d.label.toLowerCase().includes('back'))?.id || devices[0].id;
-      const idx = devices.findIndex(d => d.id === selectedCamera);
-      if (idx >= 0) setActiveCameraIdx(idx);
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 150 },
+        aspectRatio: 1.5,
+      };
 
-      await scanner.start(
-        selectedCamera,
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 150 },
-          aspectRatio: 1.5,
-        },
-        (decodedText) => {
-          const now = Date.now();
-          if (now - lastScanRef.current < 2000) return;
-          lastScanRef.current = now;
+      const onSuccess = (decodedText: string) => {
+        const now = Date.now();
+        if (now - lastScanRef.current < 2000) return;
+        lastScanRef.current = now;
 
-          playBeep();
-          try { navigator.vibrate?.(100); } catch {}
+        playBeep();
+        try { navigator.vibrate?.(100); } catch {}
 
-          onScan(decodedText);
-          if (!continuous) {
-            onOpenChange(false);
-          }
-        },
-        () => {} // ignore errors during scanning
-      );
-    } catch (err: any) {
-      if (err?.message?.includes('Permission')) {
-        setError('Camera permission denied. Please allow camera access and try again.');
+        onScan(decodedText);
+        if (!continuous) {
+          onOpenChange(false);
+        }
+      };
+
+      if (cameraId) {
+        // Explicit camera selected (e.g. switch camera)
+        const idx = devices.findIndex(d => d.id === cameraId);
+        if (idx >= 0) setActiveCameraIdx(idx);
+        await scanner.start(cameraId, config, onSuccess, () => {});
+      } else if (devices.length > 0) {
+        const selectedCamera = devices.find(d => d.label.toLowerCase().includes('back'))?.id || devices[0].id;
+        const idx = devices.findIndex(d => d.id === selectedCamera);
+        if (idx >= 0) setActiveCameraIdx(idx);
+        await scanner.start(selectedCamera, config, onSuccess, () => {});
       } else {
-        setError(err?.message || 'Failed to start camera.');
+        // No devices enumerated — use facingMode (works on mobile without prior permission)
+        await scanner.start(
+          { facingMode: 'environment' },
+          config,
+          onSuccess,
+          () => {}
+        );
+        // After starting, try to enumerate cameras for the switch button
+        try {
+          const devs = await Html5Qrcode.getCameras();
+          setCameras(devs);
+        } catch {}
+      }
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      if (msg.includes('Permission') || msg.includes('NotAllowed')) {
+        setError('Camera permission denied. Please allow camera access in your browser settings and try again.');
+      } else if (msg.includes('NotFound') || msg.includes('Requested device not found')) {
+        setError('No camera found on this device.');
+      } else {
+        setError(msg || 'Failed to start camera.');
       }
     }
   }, [stopScanner, onScan, continuous, onOpenChange]);
 
   useEffect(() => {
     if (open) {
-      // Small delay to ensure DOM element is mounted
-      const timer = setTimeout(() => startScanner(), 300);
+      // Longer delay on mobile to ensure DOM is fully mounted
+      const timer = setTimeout(() => startScanner(), 500);
       return () => clearTimeout(timer);
     } else {
       stopScanner();
     }
-  }, [open]);
+  }, [open, startScanner, stopScanner]);
 
   // Cleanup on unmount
   useEffect(() => {
