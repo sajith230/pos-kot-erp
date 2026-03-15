@@ -210,6 +210,26 @@ export default function Products() {
     URL.revokeObjectURL(url);
   }
 
+  const handleBarcodeScan = useCallback((code: string) => {
+    if (barcodeScanTarget === 'field') {
+      // Populate the barcode field in the product form
+      setForm(f => ({ ...f, barcode: code }));
+      toast({ title: 'Barcode scanned', description: code });
+      return;
+    }
+    // Search mode: find and open edit dialog
+    const match = products.find(
+      (p) => p.barcode?.toLowerCase() === code.toLowerCase() ||
+             p.sku?.toLowerCase() === code.toLowerCase()
+    );
+    if (match) {
+      openEdit(match);
+      toast({ title: `Found: ${match.name}` });
+    } else {
+      toast({ variant: 'destructive', title: 'Product not found', description: `No product with barcode: ${code}` });
+    }
+  }, [products, barcodeScanTarget, toast]);
+
   useEffect(() => {
     if (business?.id) { fetchProducts(); fetchCategories(); }
   }, [business?.id, branch?.id]);
