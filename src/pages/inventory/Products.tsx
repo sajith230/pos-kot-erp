@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Plus, Pencil, Trash2, X, Upload, ImageIcon, FileSpreadsheet, Download, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Plus, Pencil, Trash2, X, Upload, ImageIcon, FileSpreadsheet, Download, AlertCircle, CheckCircle2, Camera } from 'lucide-react';
+import BarcodeScanner from '@/components/barcode/BarcodeScanner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,9 @@ export default function Products() {
   const [csvData, setCsvData] = useState<Record<string, string>[]>([]);
   const [csvErrors, setCsvErrors] = useState<Record<number, string>>({});
   const [csvImporting, setCsvImporting] = useState(false);
+
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+  const [barcodeScanTarget, setBarcodeScanTarget] = useState<'search' | 'field'>('search');
 
   // Add category inline
   const [newCatDialogOpen, setNewCatDialogOpen] = useState(false);
@@ -205,6 +209,26 @@ export default function Products() {
     a.href = url; a.download = 'products_template.csv'; a.click();
     URL.revokeObjectURL(url);
   }
+
+  const handleBarcodeScan = useCallback((code: string) => {
+    if (barcodeScanTarget === 'field') {
+      // Populate the barcode field in the product form
+      setForm(f => ({ ...f, barcode: code }));
+      toast({ title: 'Barcode scanned', description: code });
+      return;
+    }
+    // Search mode: find and open edit dialog
+    const match = products.find(
+      (p) => p.barcode?.toLowerCase() === code.toLowerCase() ||
+             p.sku?.toLowerCase() === code.toLowerCase()
+    );
+    if (match) {
+      openEdit(match);
+      toast({ title: `Found: ${match.name}` });
+    } else {
+      toast({ variant: 'destructive', title: 'Product not found', description: `No product with barcode: ${code}` });
+    }
+  }, [products, barcodeScanTarget, toast]);
 
   useEffect(() => {
     if (business?.id) { fetchProducts(); fetchCategories(); }
@@ -422,6 +446,9 @@ export default function Products() {
         <CardHeader>
           <div className="flex flex-wrap items-center gap-3">
             <Input placeholder="Search by name, SKU, barcode..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+            <Button variant="outline" size="icon" onClick={() => { setBarcodeScanTarget('search'); setIsCameraScannerOpen(true); }} title="Scan barcode with camera">
+              <Camera className="h-4 w-4" />
+            </Button>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-48"><SelectValue placeholder="All Categories" /></SelectTrigger>
               <SelectContent>
@@ -541,7 +568,15 @@ export default function Products() {
                   <div><Label>SKU</Label><Input value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Barcode</Label><Input value={form.barcode} onChange={e => setForm({ ...form, barcode: e.target.value })} /></div>
+                  <div>
+                    <Label>Barcode</Label>
+                    <div className="flex gap-1">
+                      <Input value={form.barcode} onChange={e => setForm({ ...form, barcode: e.target.value })} className="flex-1" />
+                      <Button type="button" variant="outline" size="icon" onClick={() => { setBarcodeScanTarget('field'); setIsCameraScannerOpen(true); }} title="Scan barcode">
+                        <Camera className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                   <div><Label>Unit</Label><Input value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
@@ -665,6 +700,13 @@ export default function Products() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Camera Barcode Scanner */}
+      <BarcodeScanner
+        open={isCameraScannerOpen}
+        onOpenChange={setIsCameraScannerOpen}
+        onScan={handleBarcodeScan}
+      />
 
       {/* CSV Import Dialog */}
       <Dialog open={csvDialogOpen} onOpenChange={(open) => { setCsvDialogOpen(open); if (!open) { setCsvData([]); setCsvErrors({}); } }}>

@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search, Plus, Minus, Trash2, User, Percent, CreditCard, Banknote, Wallet,
-  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug
+  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug, Camera
 } from 'lucide-react';
+import BarcodeScanner from '@/components/barcode/BarcodeScanner';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PermissionButton } from '@/components/auth/PermissionButton';
@@ -102,6 +104,7 @@ export default function RetailPOS() {
   const searchRef = useRef<HTMLInputElement>(null);
   const lastInputTime = useRef<number>(0);
   const inputBuffer = useRef<string>('');
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
 
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
@@ -135,7 +138,6 @@ export default function RetailPOS() {
 
   // Barcode scanner detection: rapid input → auto-add product
   const handleSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    const now = Date.now();
     if (e.key === 'Enter' && searchQuery.trim()) {
       const match = products.find(
         (p) => p.barcode?.toLowerCase() === searchQuery.trim().toLowerCase() ||
@@ -148,6 +150,23 @@ export default function RetailPOS() {
       }
     }
   }, [searchQuery, products, addItem, toast]);
+
+  // Handle barcode scan (from camera or physical scanner)
+  const handleBarcodeScan = useCallback((code: string) => {
+    const match = products.find(
+      (p) => p.barcode?.toLowerCase() === code.toLowerCase() ||
+             p.sku?.toLowerCase() === code.toLowerCase()
+    );
+    if (match) {
+      addItem(match);
+      toast({ title: `Added ${match.name}` });
+    } else {
+      toast({ variant: 'destructive', title: 'Product not found', description: `No product with barcode: ${code}` });
+    }
+    setSearchQuery('');
+  }, [products, addItem, toast]);
+
+  useBarcodeScanner({ onScan: handleBarcodeScan, enabled: !!activeShift });
 
   async function checkActiveShift() {
     setIsShiftLoading(true);
@@ -612,6 +631,9 @@ export default function RetailPOS() {
                 className="pl-9"
               />
             </div>
+            <Button variant="outline" size="icon" onClick={() => setIsCameraScannerOpen(true)} title="Scan barcode with camera">
+              <Camera className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Categories */}
@@ -944,6 +966,13 @@ export default function RetailPOS() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Camera Barcode Scanner */}
+      <BarcodeScanner
+        open={isCameraScannerOpen}
+        onOpenChange={setIsCameraScannerOpen}
+        onScan={handleBarcodeScan}
+      />
 
       {/* Close Shift Dialog */}
       <AlertDialog open={isCloseShiftOpen} onOpenChange={setIsCloseShiftOpen}>

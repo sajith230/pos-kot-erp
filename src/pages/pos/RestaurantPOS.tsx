@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import BarcodeScanner from '@/components/barcode/BarcodeScanner';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCurrency } from '@/lib/formatCurrency';
 import {
   Users, UtensilsCrossed, Truck, ShoppingBag, Search, Plus, Minus, Trash2,
-  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft
+  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft, Camera
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TableFloorPlan from '@/components/pos/TableFloorPlan';
@@ -47,10 +49,32 @@ export default function RestaurantPOS() {
     productToKitchen: Map<string, string>;
   } | null>(null);
 
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
   const { format: fc } = useCurrency();
   const navigate = useNavigate();
+
+  // Handle barcode scan (from camera or physical scanner)
+  const handleBarcodeScan = useCallback((code: string) => {
+    const match = products.find(
+      (p) => p.barcode?.toLowerCase() === code.toLowerCase() ||
+             p.sku?.toLowerCase() === code.toLowerCase()
+    );
+    if (match) {
+      if (activeOrder) {
+        addItemToOrder(match);
+        toast({ title: `Added ${match.name}` });
+      } else {
+        toast({ variant: 'destructive', title: 'No active order', description: 'Select a table or start an order first.' });
+      }
+    } else {
+      toast({ variant: 'destructive', title: 'Product not found', description: `No product with barcode: ${code}` });
+    }
+  }, [products, activeOrder, toast]);
+
+  useBarcodeScanner({ onScan: handleBarcodeScan, enabled: !!activeOrder });
 
   useEffect(() => {
     if (business?.id && branch?.id) {
@@ -579,6 +603,9 @@ export default function RestaurantPOS() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="Search menu..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
                 </div>
+                <Button variant="outline" size="icon" onClick={() => setIsCameraScannerOpen(true)} title="Scan barcode with camera">
+                  <Camera className="h-4 w-4" />
+                </Button>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 <Badge variant={selectedCategory === null ? 'default' : 'outline'} className="cursor-pointer whitespace-nowrap" onClick={() => setSelectedCategory(null)}>All</Badge>
@@ -710,6 +737,13 @@ export default function RestaurantPOS() {
         formatCurrency={fc}
         onComplete={handlePayment}
         isProcessing={isProcessingPayment}
+      />
+
+      {/* Camera Barcode Scanner */}
+      <BarcodeScanner
+        open={isCameraScannerOpen}
+        onOpenChange={setIsCameraScannerOpen}
+        onScan={handleBarcodeScan}
       />
 
       {/* Kitchen Selection Dialog */}

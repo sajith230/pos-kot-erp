@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Package, AlertTriangle, TrendingDown, ArrowUpDown, History, Minus, Plus } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Package, AlertTriangle, TrendingDown, ArrowUpDown, History, Minus, Plus, Camera } from 'lucide-react';
+import BarcodeScanner from '@/components/barcode/BarcodeScanner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -58,6 +59,21 @@ export default function StockOverview() {
   const [historyProductName, setHistoryProductName] = useState('');
   const [productMovements, setProductMovements] = useState<StockMovement[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+
+  const handleBarcodeScan = useCallback((code: string) => {
+    const match = inventory.find(
+      (i) => i.product?.barcode?.toLowerCase() === code.toLowerCase() ||
+             i.product?.sku?.toLowerCase() === code.toLowerCase()
+    );
+    if (match) {
+      setSearch(match.product?.name || code);
+      openAdjustDialog(match);
+      toast({ title: `Found: ${match.product?.name}` });
+    } else {
+      toast({ variant: 'destructive', title: 'Product not found', description: `No inventory item with barcode: ${code}` });
+    }
+  }, [inventory, toast]);
 
   useEffect(() => {
     if (business?.id) {
@@ -216,7 +232,12 @@ export default function StockOverview() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Inventory</CardTitle>
-                <Input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+                <div className="flex items-center gap-2">
+                  <Input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+                  <Button variant="outline" size="icon" onClick={() => setIsCameraScannerOpen(true)} title="Scan barcode with camera">
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -307,6 +328,13 @@ export default function StockOverview() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Camera Barcode Scanner */}
+      <BarcodeScanner
+        open={isCameraScannerOpen}
+        onOpenChange={setIsCameraScannerOpen}
+        onScan={handleBarcodeScan}
+      />
 
       {/* Adjust Stock Dialog */}
       <Dialog open={adjustDialogOpen} onOpenChange={setAdjustDialogOpen}>
