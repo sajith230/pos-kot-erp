@@ -62,6 +62,9 @@ export default function Products() {
   const [csvErrors, setCsvErrors] = useState<Record<number, string>>({});
   const [csvImporting, setCsvImporting] = useState(false);
 
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+  const [barcodeScanTarget, setBarcodeScanTarget] = useState<'search' | 'field'>('search');
+
   // Add category inline
   const [newCatDialogOpen, setNewCatDialogOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
