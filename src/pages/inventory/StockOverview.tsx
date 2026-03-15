@@ -59,6 +59,21 @@ export default function StockOverview() {
   const [historyProductName, setHistoryProductName] = useState('');
   const [productMovements, setProductMovements] = useState<StockMovement[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+
+  const handleBarcodeScan = useCallback((code: string) => {
+    const match = inventory.find(
+      (i) => i.product?.barcode?.toLowerCase() === code.toLowerCase() ||
+             i.product?.sku?.toLowerCase() === code.toLowerCase()
+    );
+    if (match) {
+      setSearch(match.product?.name || code);
+      openAdjustDialog(match);
+      toast({ title: `Found: ${match.product?.name}` });
+    } else {
+      toast({ variant: 'destructive', title: 'Product not found', description: `No inventory item with barcode: ${code}` });
+    }
+  }, [inventory, toast]);
 
   useEffect(() => {
     if (business?.id) {
