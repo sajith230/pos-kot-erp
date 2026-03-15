@@ -232,7 +232,12 @@ export default function StockOverview() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Inventory</CardTitle>
-                <Input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+                <div className="flex items-center gap-2">
+                  <Input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+                  <Button variant="outline" size="icon" onClick={() => setIsCameraScannerOpen(true)} title="Scan barcode with camera">
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
