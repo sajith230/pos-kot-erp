@@ -446,6 +446,9 @@ export default function Products() {
         <CardHeader>
           <div className="flex flex-wrap items-center gap-3">
             <Input placeholder="Search by name, SKU, barcode..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+            <Button variant="outline" size="icon" onClick={() => { setBarcodeScanTarget('search'); setIsCameraScannerOpen(true); }} title="Scan barcode with camera">
+              <Camera className="h-4 w-4" />
+            </Button>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-48"><SelectValue placeholder="All Categories" /></SelectTrigger>
               <SelectContent>
