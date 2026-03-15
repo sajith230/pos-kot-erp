@@ -631,6 +631,9 @@ export default function RetailPOS() {
                 className="pl-9"
               />
             </div>
+            <Button variant="outline" size="icon" onClick={() => setIsCameraScannerOpen(true)} title="Scan barcode with camera">
+              <Camera className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Categories */}
