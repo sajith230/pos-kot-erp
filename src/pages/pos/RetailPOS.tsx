@@ -138,7 +138,6 @@ export default function RetailPOS() {
 
   // Barcode scanner detection: rapid input → auto-add product
   const handleSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    const now = Date.now();
     if (e.key === 'Enter' && searchQuery.trim()) {
       const match = products.find(
         (p) => p.barcode?.toLowerCase() === searchQuery.trim().toLowerCase() ||
@@ -151,6 +150,23 @@ export default function RetailPOS() {
       }
     }
   }, [searchQuery, products, addItem, toast]);
+
+  // Handle barcode scan (from camera or physical scanner)
+  const handleBarcodeScan = useCallback((code: string) => {
+    const match = products.find(
+      (p) => p.barcode?.toLowerCase() === code.toLowerCase() ||
+             p.sku?.toLowerCase() === code.toLowerCase()
+    );
+    if (match) {
+      addItem(match);
+      toast({ title: `Added ${match.name}` });
+    } else {
+      toast({ variant: 'destructive', title: 'Product not found', description: `No product with barcode: ${code}` });
+    }
+    setSearchQuery('');
+  }, [products, addItem, toast]);
+
+  useBarcodeScanner({ onScan: handleBarcodeScan, enabled: !!activeShift });
 
   async function checkActiveShift() {
     setIsShiftLoading(true);
