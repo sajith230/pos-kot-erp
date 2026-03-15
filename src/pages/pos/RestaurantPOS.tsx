@@ -49,10 +49,32 @@ export default function RestaurantPOS() {
     productToKitchen: Map<string, string>;
   } | null>(null);
 
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
   const { format: fc } = useCurrency();
   const navigate = useNavigate();
+
+  // Handle barcode scan (from camera or physical scanner)
+  const handleBarcodeScan = useCallback((code: string) => {
+    const match = products.find(
+      (p) => p.barcode?.toLowerCase() === code.toLowerCase() ||
+             p.sku?.toLowerCase() === code.toLowerCase()
+    );
+    if (match) {
+      if (activeOrder) {
+        addItemToOrder(match);
+        toast({ title: `Added ${match.name}` });
+      } else {
+        toast({ variant: 'destructive', title: 'No active order', description: 'Select a table or start an order first.' });
+      }
+    } else {
+      toast({ variant: 'destructive', title: 'Product not found', description: `No product with barcode: ${code}` });
+    }
+  }, [products, activeOrder, toast]);
+
+  useBarcodeScanner({ onScan: handleBarcodeScan, enabled: !!activeOrder });
 
   useEffect(() => {
     if (business?.id && branch?.id) {
