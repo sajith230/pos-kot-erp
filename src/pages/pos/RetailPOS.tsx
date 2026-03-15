@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search, Plus, Minus, Trash2, User, Percent, CreditCard, Banknote, Wallet,
-  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug
+  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug, Camera
 } from 'lucide-react';
+import BarcodeScanner from '@/components/barcode/BarcodeScanner';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PermissionButton } from '@/components/auth/PermissionButton';
