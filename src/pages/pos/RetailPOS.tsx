@@ -104,6 +104,7 @@ export default function RetailPOS() {
   const searchRef = useRef<HTMLInputElement>(null);
   const lastInputTime = useRef<number>(0);
   const inputBuffer = useRef<string>('');
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
 
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
