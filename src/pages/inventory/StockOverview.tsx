@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Package, AlertTriangle, TrendingDown, ArrowUpDown, History, Minus, Plus } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Package, AlertTriangle, TrendingDown, ArrowUpDown, History, Minus, Plus, Camera } from 'lucide-react';
+import BarcodeScanner from '@/components/barcode/BarcodeScanner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
