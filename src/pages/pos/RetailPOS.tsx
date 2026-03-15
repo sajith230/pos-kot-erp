@@ -967,6 +967,13 @@ export default function RetailPOS() {
         </DialogContent>
       </Dialog>
 
+      {/* Camera Barcode Scanner */}
+      <BarcodeScanner
+        open={isCameraScannerOpen}
+        onOpenChange={setIsCameraScannerOpen}
+        onScan={handleBarcodeScan}
+      />
+
       {/* Close Shift Dialog */}
       <AlertDialog open={isCloseShiftOpen} onOpenChange={setIsCloseShiftOpen}>
         <AlertDialogContent>

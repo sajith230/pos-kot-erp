@@ -739,6 +739,13 @@ export default function RestaurantPOS() {
         isProcessing={isProcessingPayment}
       />
 
+      {/* Camera Barcode Scanner */}
+      <BarcodeScanner
+        open={isCameraScannerOpen}
+        onOpenChange={setIsCameraScannerOpen}
+        onScan={handleBarcodeScan}
+      />
+
       {/* Kitchen Selection Dialog */}
       {kitchenSelectData && (
         <KitchenSelectDialog

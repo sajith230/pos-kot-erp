@@ -701,6 +701,13 @@ export default function Products() {
         </DialogContent>
       </Dialog>
 
+      {/* Camera Barcode Scanner */}
+      <BarcodeScanner
+        open={isCameraScannerOpen}
+        onOpenChange={setIsCameraScannerOpen}
+        onScan={handleBarcodeScan}
+      />
+
       {/* CSV Import Dialog */}
       <Dialog open={csvDialogOpen} onOpenChange={(open) => { setCsvDialogOpen(open); if (!open) { setCsvData([]); setCsvErrors({}); } }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
