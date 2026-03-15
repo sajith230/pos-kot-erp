@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Plus, Pencil, Trash2, X, Upload, ImageIcon, FileSpreadsheet, Download, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Plus, Pencil, Trash2, X, Upload, ImageIcon, FileSpreadsheet, Download, AlertCircle, CheckCircle2, Camera } from 'lucide-react';
+import BarcodeScanner from '@/components/barcode/BarcodeScanner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
