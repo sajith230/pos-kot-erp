@@ -603,6 +603,9 @@ export default function RestaurantPOS() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="Search menu..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
                 </div>
+                <Button variant="outline" size="icon" onClick={() => setIsCameraScannerOpen(true)} title="Scan barcode with camera">
+                  <Camera className="h-4 w-4" />
+                </Button>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 <Badge variant={selectedCategory === null ? 'default' : 'outline'} className="cursor-pointer whitespace-nowrap" onClick={() => setSelectedCategory(null)}>All</Badge>
