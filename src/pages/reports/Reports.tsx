@@ -559,6 +559,7 @@ export default function Reports() {
               <CardHeader><CardTitle>Top Selling Products</CardTitle></CardHeader>
               <CardContent>
                 {topProducts.length > 0 ? (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -579,6 +580,7 @@ export default function Reports() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-32 text-muted-foreground">
                     {loading ? 'Loading...' : 'No product data for this period'}
