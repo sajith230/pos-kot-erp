@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search, Plus, Minus, Trash2, User, Percent, CreditCard, Banknote, Wallet,
-  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug, Camera
+  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug, Camera, ShoppingCart
 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import BarcodeScanner from '@/components/barcode/BarcodeScanner';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
