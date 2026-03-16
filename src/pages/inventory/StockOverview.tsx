@@ -273,13 +273,14 @@ export default function StockOverview() {
               </div>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
-                    <TableHead>SKU</TableHead>
+                    <TableHead className="hidden md:table-cell">SKU</TableHead>
                     <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="text-right">Min Stock</TableHead>
+                    <TableHead className="text-right hidden sm:table-cell">Min Stock</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -292,9 +293,9 @@ export default function StockOverview() {
                   ) : filtered.map(item => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.product?.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.product?.sku || '—'}</TableCell>
+                      <TableCell className="text-muted-foreground hidden md:table-cell">{item.product?.sku || '—'}</TableCell>
                       <TableCell className="text-right">{item.quantity}</TableCell>
-                      <TableCell className="text-right">{item.product?.min_stock || 0}</TableCell>
+                      <TableCell className="text-right hidden sm:table-cell">{item.product?.min_stock || 0}</TableCell>
                       <TableCell>
                         {item.quantity <= (item.product?.min_stock || 0) ? (
                           <Badge variant="destructive">Low Stock</Badge>
@@ -302,18 +303,21 @@ export default function StockOverview() {
                           <Badge variant="secondary">In Stock</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => openHistoryDialog(item)}>
-                          <History className="h-4 w-4 mr-1" /> History
-                        </Button>
-                        <PermissionButton permitted={canEdit('inventory.stock')} variant="outline" size="sm" onClick={() => openAdjustDialog(item)}>
-                          <ArrowUpDown className="h-4 w-4 mr-1" /> Adjust
-                        </PermissionButton>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => openHistoryDialog(item)} className="hidden sm:inline-flex">
+                            <History className="h-4 w-4 mr-1" /> History
+                          </Button>
+                          <PermissionButton permitted={canEdit('inventory.stock')} variant="outline" size="sm" onClick={() => openAdjustDialog(item)}>
+                            <ArrowUpDown className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Adjust</span>
+                          </PermissionButton>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
