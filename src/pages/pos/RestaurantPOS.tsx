@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import BarcodeScanner from '@/components/barcode/BarcodeScanner';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
