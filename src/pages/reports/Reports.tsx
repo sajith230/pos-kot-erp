@@ -716,12 +716,13 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 {lowStockItems.length > 0 ? (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Product</TableHead>
                         <TableHead className="text-right">Current</TableHead>
-                        <TableHead className="text-right">Min Stock</TableHead>
+                        <TableHead className="text-right hidden sm:table-cell">Min Stock</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -730,7 +731,7 @@ export default function Reports() {
                         <TableRow key={item.productId}>
                           <TableCell className="font-medium">{item.name}</TableCell>
                           <TableCell className="text-right">{item.quantity}</TableCell>
-                          <TableCell className="text-right">{item.minStock}</TableCell>
+                          <TableCell className="text-right hidden sm:table-cell">{item.minStock}</TableCell>
                           <TableCell>
                             <Badge variant={item.status === 'out' ? 'destructive' : item.status === 'critical' ? 'destructive' : 'secondary'}>
                               {item.status === 'out' ? 'Out of Stock' : item.status === 'critical' ? 'Critical' : 'Low'}
@@ -740,6 +741,7 @@ export default function Reports() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-32 text-muted-foreground">
                     {inventoryLoading ? 'Loading...' : 'All items well-stocked 👍'}

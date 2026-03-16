@@ -640,7 +640,7 @@ export default function RestaurantPOS() {
                 )}
               </ScrollArea>
             </div>
-            <Card className="w-80 flex flex-col">
+            <Card className="w-full md:w-80 flex flex-col">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center justify-between text-base">
                   <span className="flex items-center gap-2">

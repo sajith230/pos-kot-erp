@@ -330,14 +330,15 @@ export default function StockOverview() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Product</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead className="hidden sm:table-cell">Type</TableHead>
                     <TableHead className="text-right">Qty Change</TableHead>
-                    <TableHead>Notes</TableHead>
+                    <TableHead className="hidden md:table-cell">Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -345,9 +346,9 @@ export default function StockOverview() {
                     <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No movements recorded</TableCell></TableRow>
                   ) : movements.map(mv => (
                     <TableRow key={mv.id}>
-                      <TableCell>{format(new Date(mv.created_at), 'dd MMM yyyy HH:mm')}</TableCell>
+                      <TableCell className="whitespace-nowrap">{format(new Date(mv.created_at), 'dd MMM yyyy HH:mm')}</TableCell>
                       <TableCell className="font-medium">{mv.product?.name || '—'}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Badge variant={mv.quantity > 0 ? 'default' : 'secondary'}>
                           {mv.movement_type.replace('_', ' ')}
                         </Badge>
@@ -355,11 +356,12 @@ export default function StockOverview() {
                       <TableCell className={`text-right font-mono ${mv.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {mv.quantity > 0 ? '+' : ''}{mv.quantity}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{mv.notes || '—'}</TableCell>
+                      <TableCell className="text-muted-foreground hidden md:table-cell">{mv.notes || '—'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

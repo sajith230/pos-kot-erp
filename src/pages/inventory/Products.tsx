@@ -472,18 +472,19 @@ export default function Products() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12"></TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Category</TableHead>
+                <TableHead className="hidden md:table-cell">SKU</TableHead>
+                <TableHead className="hidden sm:table-cell">Category</TableHead>
                 <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right">Cost</TableHead>
-                <TableHead className="text-right">Margin</TableHead>
-                <TableHead className="text-right">Stock</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="text-right hidden lg:table-cell">Cost</TableHead>
+                <TableHead className="text-right hidden lg:table-cell">Margin</TableHead>
+                <TableHead className="text-right hidden sm:table-cell">Stock</TableHead>
+                <TableHead className="hidden md:table-cell">Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -510,24 +511,24 @@ export default function Products() {
                     {p.name}
                     {p.is_ingredient && <Badge variant="outline" className="ml-2 text-xs">ingredient</Badge>}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{p.sku || '—'}</TableCell>
-                  <TableCell>{p.category?.name || '—'}</TableCell>
+                  <TableCell className="text-muted-foreground hidden md:table-cell">{p.sku || '—'}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{p.category?.name || '—'}</TableCell>
                   <TableCell className="text-right">{fc(p.price)}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right hidden lg:table-cell">
                     <div>{fc(effectiveCost)}</div>
                     {hasRecipe && <span className="text-xs text-muted-foreground">(recipe)</span>}
                   </TableCell>
-                  <TableCell className={`text-right font-medium ${marginColor}`}>
+                  <TableCell className={`text-right font-medium hidden lg:table-cell ${marginColor}`}>
                     {margin !== null ? `${margin.toFixed(1)}%` : '—'}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right hidden sm:table-cell">
                     {p.stock_qty !== undefined ? (
                       <span className={p.stock_qty <= (p.min_stock || 0) ? 'text-destructive font-medium' : ''}>
                         {p.stock_qty}
                       </span>
                     ) : '—'}
                   </TableCell>
-                  <TableCell><Badge variant={p.is_active ? 'secondary' : 'destructive'}>{p.is_active ? 'Active' : 'Inactive'}</Badge></TableCell>
+                  <TableCell className="hidden md:table-cell"><Badge variant={p.is_active ? 'secondary' : 'destructive'}>{p.is_active ? 'Active' : 'Inactive'}</Badge></TableCell>
                   <TableCell className="text-right">
                     <PermissionButton permitted={canEdit('inventory.products')} variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></PermissionButton>
                     <PermissionButton permitted={canDelete('inventory.products')} variant="ghost" size="icon" onClick={() => handleDelete(p.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></PermissionButton>
@@ -537,6 +538,7 @@ export default function Products() {
               })}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
