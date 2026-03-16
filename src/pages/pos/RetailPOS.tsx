@@ -651,7 +651,7 @@ export default function RetailPOS() {
 
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Products Section */}
-        {(!isMobile || mobileView === 'products') && (
+        {(!isCompact || mobileView === 'products') && (
           <div className="flex-1 flex flex-col gap-3 min-h-0">
             {/* Search & Filters */}
             <div className="flex gap-2 sm:gap-3">
