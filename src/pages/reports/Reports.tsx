@@ -803,32 +803,34 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               {stockMovements.length > 0 ? (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
                       <TableHead>Product</TableHead>
-                      <TableHead>Type</TableHead>
+                      <TableHead className="hidden sm:table-cell">Type</TableHead>
                       <TableHead className="text-right">Quantity</TableHead>
-                      <TableHead>Notes</TableHead>
+                      <TableHead className="hidden md:table-cell">Notes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {stockMovements.map((m) => (
                       <TableRow key={m.id}>
-                        <TableCell className="text-muted-foreground">{format(new Date(m.createdAt), 'MMM d, HH:mm')}</TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap">{format(new Date(m.createdAt), 'MMM d, HH:mm')}</TableCell>
                         <TableCell className="font-medium">{m.productName}</TableCell>
-                        <TableCell>
+                        <TableCell className="hidden sm:table-cell">
                           <Badge variant="outline">{m.movementType}</Badge>
                         </TableCell>
                         <TableCell className={cn('text-right font-medium', m.quantity > 0 ? 'text-success' : 'text-destructive')}>
                           {m.quantity > 0 ? '+' : ''}{m.quantity}
                         </TableCell>
-                        <TableCell className="text-muted-foreground truncate max-w-[200px]">{m.notes || '—'}</TableCell>
+                        <TableCell className="text-muted-foreground truncate max-w-[200px] hidden md:table-cell">{m.notes || '—'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-32 text-muted-foreground">
                   {inventoryLoading ? 'Loading...' : 'No stock movements in this period'}
