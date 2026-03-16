@@ -3,7 +3,7 @@ import {
   Search, Plus, Minus, Trash2, User, Percent, CreditCard, Banknote, Wallet,
   Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug, Camera, ShoppingCart
 } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+
 import BarcodeScanner from '@/components/barcode/BarcodeScanner';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -535,8 +535,15 @@ export default function RetailPOS() {
     setIsReceiptOpen(false);
   }
 
-  const isMobile = useIsMobile();
+  const [isCompact, setIsCompact] = useState(window.innerWidth < 1024);
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 1023px)');
+    const onChange = () => setIsCompact(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
 
   if (!business) {
     return (
@@ -620,7 +627,7 @@ export default function RetailPOS() {
       </div>
 
       {/* Mobile Tab Switcher */}
-      {isMobile && (
+      {isCompact && (
         <div className="flex mb-3 bg-muted p-1 rounded-lg">
           <button
             className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mobileView === 'products' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
@@ -644,7 +651,7 @@ export default function RetailPOS() {
 
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Products Section */}
-        {(!isMobile || mobileView === 'products') && (
+        {(!isCompact || mobileView === 'products') && (
           <div className="flex-1 flex flex-col gap-3 min-h-0">
             {/* Search & Filters */}
             <div className="flex gap-2 sm:gap-3">
@@ -705,7 +712,7 @@ export default function RetailPOS() {
                       className="cursor-pointer hover:border-primary transition-colors"
                       onClick={() => {
                         addItem(product);
-                        if (isMobile) {
+                        if (isCompact) {
                           // Brief toast feedback on mobile
                         }
                       }}
@@ -728,7 +735,7 @@ export default function RetailPOS() {
             </ScrollArea>
 
             {/* Mobile: Floating Cart Button */}
-            {isMobile && getItemCount() > 0 && (
+            {isCompact && getItemCount() > 0 && (
               <Button
                 className="w-full mt-2"
                 onClick={() => setMobileView('cart')}
@@ -741,8 +748,8 @@ export default function RetailPOS() {
         )}
 
         {/* Cart Section */}
-        {(!isMobile || mobileView === 'cart') && (
-          <Card className={`${isMobile ? 'flex-1' : 'w-80 lg:w-96'} flex flex-col`}>
+        {(!isCompact || mobileView === 'cart') && (
+          <Card className={`${isCompact ? 'flex-1' : 'w-80 lg:w-96'} flex flex-col`}>
             <CardHeader className="pb-2 space-y-2">
               <CardTitle className="flex items-center justify-between">
                 <span>Current Sale</span>
