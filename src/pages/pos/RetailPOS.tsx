@@ -712,7 +712,7 @@ export default function RetailPOS() {
                       className="cursor-pointer hover:border-primary transition-colors"
                       onClick={() => {
                         addItem(product);
-                        if (isMobile) {
+                        if (isCompact) {
                           // Brief toast feedback on mobile
                         }
                       }}
