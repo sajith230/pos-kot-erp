@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Camera, CameraOff, SwitchCamera } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Camera, CameraOff, Keyboard, SwitchCamera } from 'lucide-react';
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 
 interface BarcodeScannerProps {
