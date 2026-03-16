@@ -200,16 +200,24 @@ export default function BarcodeScanner({ open, onOpenChange, onScan, continuous 
               onSubmit={(e) => {
                 e.preventDefault();
                 const code = manualCode.trim();
-                if (!code) return;
+                const error = validateBarcode(code);
+                if (error) {
+                  setValidationError(error);
+                  return;
+                }
                 playBeep();
                 onScan(code);
                 setManualCode('');
+                setValidationError(null);
                 if (!continuous) onOpenChange(false);
               }}
             >
               <Input
                 value={manualCode}
-                onChange={(e) => setManualCode(e.target.value)}
+                onChange={(e) => {
+                  setManualCode(e.target.value);
+                  if (validationError) setValidationError(null);
+                }}
                 placeholder="Enter barcode manually"
                 className="flex-1"
                 autoComplete="off"
@@ -218,6 +226,9 @@ export default function BarcodeScanner({ open, onOpenChange, onScan, continuous 
                 Submit
               </Button>
             </form>
+            {validationError && (
+              <p className="text-xs text-destructive mt-1">{validationError}</p>
+            )}
           </div>
         </div>
       </DialogContent>
