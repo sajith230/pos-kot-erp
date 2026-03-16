@@ -179,9 +179,9 @@ export default function Customers() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Customers</h1>
           <p className="text-muted-foreground">Manage your customer relationships</p>
         </div>
         <PermissionButton permitted={canCreate('customers')} onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add Customer</PermissionButton>
