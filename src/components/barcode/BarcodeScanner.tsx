@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Camera, CameraOff, SwitchCamera } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Camera, CameraOff, Keyboard, SwitchCamera } from 'lucide-react';
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 
 interface BarcodeScannerProps {
@@ -31,6 +32,7 @@ export default function BarcodeScanner({ open, onOpenChange, onScan, continuous 
   const [error, setError] = useState<string | null>(null);
   const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
   const [activeCameraIdx, setActiveCameraIdx] = useState(0);
+  const [manualCode, setManualCode] = useState('');
   const containerRef = useRef<string>('barcode-reader-' + Math.random().toString(36).slice(2));
 
   const stopScanner = useCallback(async () => {
@@ -179,6 +181,36 @@ export default function BarcodeScanner({ open, onOpenChange, onScan, continuous 
               </div>
             </>
           )}
+          {/* Manual barcode entry */}
+          <div className="border-t pt-3">
+            <label className="text-xs text-muted-foreground flex items-center gap-1 mb-1.5">
+              <Keyboard className="h-3.5 w-3.5" />
+              Or enter barcode manually
+            </label>
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const code = manualCode.trim();
+                if (!code) return;
+                playBeep();
+                onScan(code);
+                setManualCode('');
+                if (!continuous) onOpenChange(false);
+              }}
+            >
+              <Input
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                placeholder="Enter barcode manually"
+                className="flex-1"
+                autoComplete="off"
+              />
+              <Button type="submit" size="sm" disabled={!manualCode.trim()}>
+                Submit
+              </Button>
+            </form>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
