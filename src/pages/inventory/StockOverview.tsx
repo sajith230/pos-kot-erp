@@ -262,7 +262,7 @@ export default function StockOverview() {
         <TabsContent value="inventory">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <CardTitle>Inventory</CardTitle>
                 <div className="flex items-center gap-2">
                   <Input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
