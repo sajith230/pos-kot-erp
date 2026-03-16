@@ -32,6 +32,7 @@ export default function BarcodeScanner({ open, onOpenChange, onScan, continuous 
   const [error, setError] = useState<string | null>(null);
   const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
   const [activeCameraIdx, setActiveCameraIdx] = useState(0);
+  const [manualCode, setManualCode] = useState('');
   const containerRef = useRef<string>('barcode-reader-' + Math.random().toString(36).slice(2));
 
   const stopScanner = useCallback(async () => {
