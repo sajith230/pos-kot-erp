@@ -560,7 +560,7 @@ export default function RestaurantPOS() {
             </div>
 
             {/* New Order Card */}
-            <Card className="w-72 shrink-0 self-start">
+            <Card className="w-full md:w-72 shrink-0 self-start">
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center">
                   {orderType === 'takeaway' ? (
