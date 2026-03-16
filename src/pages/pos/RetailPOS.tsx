@@ -735,7 +735,7 @@ export default function RetailPOS() {
             </ScrollArea>
 
             {/* Mobile: Floating Cart Button */}
-            {isMobile && getItemCount() > 0 && (
+            {isCompact && getItemCount() > 0 && (
               <Button
                 className="w-full mt-2"
                 onClick={() => setMobileView('cart')}
