@@ -524,7 +524,7 @@ export default function RestaurantPOS() {
             onTablesChange={fetchTables}
           />
         ) : orderType !== 'dine_in' && !activeOrder ? (
-          <div className="flex-1 flex gap-4">
+          <div className="flex-1 flex flex-col md:flex-row gap-4">
             {/* Active Orders List */}
             <div className="flex-1 flex flex-col">
               <h3 className="font-semibold text-sm mb-2 text-muted-foreground uppercase tracking-wide">
