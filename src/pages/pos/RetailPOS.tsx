@@ -627,7 +627,7 @@ export default function RetailPOS() {
       </div>
 
       {/* Mobile Tab Switcher */}
-      {isMobile && (
+      {isCompact && (
         <div className="flex mb-3 bg-muted p-1 rounded-lg">
           <button
             className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mobileView === 'products' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
