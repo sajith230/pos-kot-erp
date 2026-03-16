@@ -142,22 +142,22 @@ export default function GeneralSettings() {
 
   return (
     <div className="space-y-6">
-      <div><h1 className="text-3xl font-bold tracking-tight">General Settings</h1><p className="text-muted-foreground">Configure your business details</p></div>
+      <div><h1 className="text-2xl md:text-3xl font-bold tracking-tight">General Settings</h1><p className="text-muted-foreground">Configure your business details</p></div>
       
       <Card>
         <CardHeader><CardTitle>Business Information</CardTitle><CardDescription>Update your business profile and tax settings</CardDescription></CardHeader>
         <CardContent>
           <div className="grid gap-4 max-w-2xl">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label>Business Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
               <div><Label>Legal Name</Label><Input value={form.legal_name} onChange={e => setForm({ ...form, legal_name: e.target.value })} /></div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div><Label>Tax ID</Label><Input value={form.tax_id} onChange={e => setForm({ ...form, tax_id: e.target.value })} /></div>
               <div><Label>Tax Rate (%)</Label><Input type="number" value={form.tax_rate} onChange={e => setForm({ ...form, tax_rate: +e.target.value })} /></div>
               <div><Label>Currency</Label><Input value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label>Email</Label><Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
               <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
             </div>

@@ -225,7 +225,7 @@ export default function StockOverview() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Stock Overview</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Stock Overview</h1>
         <p className="text-muted-foreground">Monitor and adjust inventory levels across your branch</p>
       </div>
 
@@ -262,7 +262,7 @@ export default function StockOverview() {
         <TabsContent value="inventory">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <CardTitle>Inventory</CardTitle>
                 <div className="flex items-center gap-2">
                   <Input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
@@ -273,13 +273,14 @@ export default function StockOverview() {
               </div>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
-                    <TableHead>SKU</TableHead>
+                    <TableHead className="hidden md:table-cell">SKU</TableHead>
                     <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="text-right">Min Stock</TableHead>
+                    <TableHead className="text-right hidden sm:table-cell">Min Stock</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -292,9 +293,9 @@ export default function StockOverview() {
                   ) : filtered.map(item => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.product?.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.product?.sku || '—'}</TableCell>
+                      <TableCell className="text-muted-foreground hidden md:table-cell">{item.product?.sku || '—'}</TableCell>
                       <TableCell className="text-right">{item.quantity}</TableCell>
-                      <TableCell className="text-right">{item.product?.min_stock || 0}</TableCell>
+                      <TableCell className="text-right hidden sm:table-cell">{item.product?.min_stock || 0}</TableCell>
                       <TableCell>
                         {item.quantity <= (item.product?.min_stock || 0) ? (
                           <Badge variant="destructive">Low Stock</Badge>
@@ -302,18 +303,21 @@ export default function StockOverview() {
                           <Badge variant="secondary">In Stock</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => openHistoryDialog(item)}>
-                          <History className="h-4 w-4 mr-1" /> History
-                        </Button>
-                        <PermissionButton permitted={canEdit('inventory.stock')} variant="outline" size="sm" onClick={() => openAdjustDialog(item)}>
-                          <ArrowUpDown className="h-4 w-4 mr-1" /> Adjust
-                        </PermissionButton>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => openHistoryDialog(item)} className="hidden sm:inline-flex">
+                            <History className="h-4 w-4 mr-1" /> History
+                          </Button>
+                          <PermissionButton permitted={canEdit('inventory.stock')} variant="outline" size="sm" onClick={() => openAdjustDialog(item)}>
+                            <ArrowUpDown className="h-4 w-4 sm:mr-1" /> <span className="hidden sm:inline">Adjust</span>
+                          </PermissionButton>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -326,14 +330,15 @@ export default function StockOverview() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Product</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead className="hidden sm:table-cell">Type</TableHead>
                     <TableHead className="text-right">Qty Change</TableHead>
-                    <TableHead>Notes</TableHead>
+                    <TableHead className="hidden md:table-cell">Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -341,9 +346,9 @@ export default function StockOverview() {
                     <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No movements recorded</TableCell></TableRow>
                   ) : movements.map(mv => (
                     <TableRow key={mv.id}>
-                      <TableCell>{format(new Date(mv.created_at), 'dd MMM yyyy HH:mm')}</TableCell>
+                      <TableCell className="whitespace-nowrap">{format(new Date(mv.created_at), 'dd MMM yyyy HH:mm')}</TableCell>
                       <TableCell className="font-medium">{mv.product?.name || '—'}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Badge variant={mv.quantity > 0 ? 'default' : 'secondary'}>
                           {mv.movement_type.replace('_', ' ')}
                         </Badge>
@@ -351,11 +356,12 @@ export default function StockOverview() {
                       <TableCell className={`text-right font-mono ${mv.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {mv.quantity > 0 ? '+' : ''}{mv.quantity}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{mv.notes || '—'}</TableCell>
+                      <TableCell className="text-muted-foreground hidden md:table-cell">{mv.notes || '—'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

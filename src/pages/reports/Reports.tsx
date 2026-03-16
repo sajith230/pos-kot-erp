@@ -559,6 +559,7 @@ export default function Reports() {
               <CardHeader><CardTitle>Top Selling Products</CardTitle></CardHeader>
               <CardContent>
                 {topProducts.length > 0 ? (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -579,6 +580,7 @@ export default function Reports() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-32 text-muted-foreground">
                     {loading ? 'Loading...' : 'No product data for this period'}
@@ -714,12 +716,13 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 {lowStockItems.length > 0 ? (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Product</TableHead>
                         <TableHead className="text-right">Current</TableHead>
-                        <TableHead className="text-right">Min Stock</TableHead>
+                        <TableHead className="text-right hidden sm:table-cell">Min Stock</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -728,7 +731,7 @@ export default function Reports() {
                         <TableRow key={item.productId}>
                           <TableCell className="font-medium">{item.name}</TableCell>
                           <TableCell className="text-right">{item.quantity}</TableCell>
-                          <TableCell className="text-right">{item.minStock}</TableCell>
+                          <TableCell className="text-right hidden sm:table-cell">{item.minStock}</TableCell>
                           <TableCell>
                             <Badge variant={item.status === 'out' ? 'destructive' : item.status === 'critical' ? 'destructive' : 'secondary'}>
                               {item.status === 'out' ? 'Out of Stock' : item.status === 'critical' ? 'Critical' : 'Low'}
@@ -738,6 +741,7 @@ export default function Reports() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-32 text-muted-foreground">
                     {inventoryLoading ? 'Loading...' : 'All items well-stocked 👍'}
@@ -752,14 +756,15 @@ export default function Reports() {
             <CardHeader><CardTitle>Profit Margin Analysis</CardTitle></CardHeader>
             <CardContent>
               {profitProducts.length > 0 ? (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Product</TableHead>
-                      <TableHead className="text-right">Cost Price</TableHead>
-                      <TableHead className="text-right">Sell Price</TableHead>
+                      <TableHead className="text-right hidden sm:table-cell">Cost Price</TableHead>
+                      <TableHead className="text-right hidden sm:table-cell">Sell Price</TableHead>
                       <TableHead className="text-right">Margin %</TableHead>
-                      <TableHead className="text-right">Units Sold</TableHead>
+                      <TableHead className="text-right hidden md:table-cell">Units Sold</TableHead>
                       <TableHead className="text-right">Total Profit</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -767,19 +772,20 @@ export default function Reports() {
                     {profitProducts.map((p) => (
                       <TableRow key={p.productId}>
                         <TableCell className="font-medium">{p.name}</TableCell>
-                        <TableCell className="text-right">{fc(p.costPrice)}</TableCell>
-                        <TableCell className="text-right">{fc(p.sellPrice)}</TableCell>
+                        <TableCell className="text-right hidden sm:table-cell">{fc(p.costPrice)}</TableCell>
+                        <TableCell className="text-right hidden sm:table-cell">{fc(p.sellPrice)}</TableCell>
                         <TableCell className="text-right">
                           <span className={cn(p.marginPercent >= 50 ? 'text-success' : p.marginPercent >= 20 ? 'text-warning' : 'text-destructive')}>
                             {p.marginPercent.toFixed(1)}%
                           </span>
                         </TableCell>
-                        <TableCell className="text-right">{p.unitsSold}</TableCell>
+                        <TableCell className="text-right hidden md:table-cell">{p.unitsSold}</TableCell>
                         <TableCell className="text-right font-medium">{fc(p.totalProfit)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-32 text-muted-foreground">
                   {inventoryLoading ? 'Loading...' : 'No product data available'}
@@ -797,32 +803,34 @@ export default function Reports() {
             </CardHeader>
             <CardContent>
               {stockMovements.length > 0 ? (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
                       <TableHead>Product</TableHead>
-                      <TableHead>Type</TableHead>
+                      <TableHead className="hidden sm:table-cell">Type</TableHead>
                       <TableHead className="text-right">Quantity</TableHead>
-                      <TableHead>Notes</TableHead>
+                      <TableHead className="hidden md:table-cell">Notes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {stockMovements.map((m) => (
                       <TableRow key={m.id}>
-                        <TableCell className="text-muted-foreground">{format(new Date(m.createdAt), 'MMM d, HH:mm')}</TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap">{format(new Date(m.createdAt), 'MMM d, HH:mm')}</TableCell>
                         <TableCell className="font-medium">{m.productName}</TableCell>
-                        <TableCell>
+                        <TableCell className="hidden sm:table-cell">
                           <Badge variant="outline">{m.movementType}</Badge>
                         </TableCell>
                         <TableCell className={cn('text-right font-medium', m.quantity > 0 ? 'text-success' : 'text-destructive')}>
                           {m.quantity > 0 ? '+' : ''}{m.quantity}
                         </TableCell>
-                        <TableCell className="text-muted-foreground truncate max-w-[200px]">{m.notes || '—'}</TableCell>
+                        <TableCell className="text-muted-foreground truncate max-w-[200px] hidden md:table-cell">{m.notes || '—'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-32 text-muted-foreground">
                   {inventoryLoading ? 'Loading...' : 'No stock movements in this period'}

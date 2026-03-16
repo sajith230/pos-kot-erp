@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search, Plus, Minus, Trash2, User, Percent, CreditCard, Banknote, Wallet,
-  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug, Camera
+  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug, Camera, ShoppingCart
 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import BarcodeScanner from '@/components/barcode/BarcodeScanner';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -534,6 +535,9 @@ export default function RetailPOS() {
     setIsReceiptOpen(false);
   }
 
+  const isMobile = useIsMobile();
+  const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
+
   if (!business) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-120px)]">
@@ -596,7 +600,7 @@ export default function RetailPOS() {
   return (
     <div className="flex flex-col h-[calc(100vh-120px)]">
       {/* Shift Header Bar */}
-      <div className="flex items-center justify-between mb-3 px-1">
+      <div className="flex flex-wrap items-center justify-between mb-3 px-1 gap-2">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4" />
           <span>Shift started {format(new Date(activeShift.started_at), 'h:mm a')}</span>
@@ -615,196 +619,239 @@ export default function RetailPOS() {
         </div>
       </div>
 
+      {/* Mobile Tab Switcher */}
+      {isMobile && (
+        <div className="flex mb-3 bg-muted p-1 rounded-lg">
+          <button
+            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mobileView === 'products' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+            onClick={() => setMobileView('products')}
+          >
+            Products
+          </button>
+          <button
+            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors relative ${mobileView === 'cart' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+            onClick={() => setMobileView('cart')}
+          >
+            Cart
+            {getItemCount() > 0 && (
+              <Badge variant="default" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                {getItemCount()}
+              </Badge>
+            )}
+          </button>
+        </div>
+      )}
+
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Products Section */}
-        <div className="flex-1 flex flex-col gap-3 min-h-0">
-          {/* Search & Filters */}
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                ref={searchRef}
-                placeholder="Search or scan barcode..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                className="pl-9"
-              />
+        {(!isMobile || mobileView === 'products') && (
+          <div className="flex-1 flex flex-col gap-3 min-h-0">
+            {/* Search & Filters */}
+            <div className="flex gap-2 sm:gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  ref={searchRef}
+                  placeholder="Search or scan barcode..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  className="pl-9"
+                />
+              </div>
+              <Button variant="outline" size="icon" onClick={() => setIsCameraScannerOpen(true)} title="Scan barcode with camera">
+                <Camera className="h-4 w-4" />
+              </Button>
             </div>
-            <Button variant="outline" size="icon" onClick={() => setIsCameraScannerOpen(true)} title="Scan barcode with camera">
-              <Camera className="h-4 w-4" />
-            </Button>
-          </div>
 
-          {/* Categories */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <Badge
-              variant={selectedCategory === null ? 'default' : 'outline'}
-              className="cursor-pointer whitespace-nowrap"
-              onClick={() => setSelectedCategory(null)}
-            >
-              All
-            </Badge>
-            {categories.map((cat) => (
+            {/* Categories */}
+            <div className="flex gap-2 overflow-x-auto pb-1">
               <Badge
-                key={cat.id}
-                variant={selectedCategory === cat.id ? 'default' : 'outline'}
+                variant={selectedCategory === null ? 'default' : 'outline'}
                 className="cursor-pointer whitespace-nowrap"
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => setSelectedCategory(null)}
               >
-                {cat.name}
+                All
               </Badge>
-            ))}
-          </div>
-
-          {/* Products Grid */}
-          <ScrollArea className="flex-1">
-            {isLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {[...Array(8)].map((_, i) => (
-                  <div key={i} className="h-32 rounded-lg bg-muted animate-pulse" />
-                ))}
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <p>No products found</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {filteredProducts.map((product) => (
-                  <Card
-                    key={product.id}
-                    className="cursor-pointer hover:border-primary transition-colors"
-                    onClick={() => addItem(product)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="aspect-square rounded-md bg-muted mb-2 flex items-center justify-center">
-                        {product.image_url ? (
-                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover rounded-md" />
-                        ) : (
-                          <span className="text-2xl">📦</span>
-                        )}
-                      </div>
-                      <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                      <p className="text-primary font-semibold">{fc(product.price)}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-        </div>
-
-        {/* Cart Section */}
-        <Card className="w-80 lg:w-96 flex flex-col">
-          <CardHeader className="pb-2 space-y-2">
-            <CardTitle className="flex items-center justify-between">
-              <span>Current Sale</span>
-              <Badge variant="secondary">{getItemCount()} items</Badge>
-            </CardTitle>
-            {/* Customer display / select */}
-            <div className="flex items-center gap-2">
-              {customer ? (
-                <div className="flex items-center gap-2 flex-1 text-sm bg-muted rounded-md px-2 py-1">
-                  <User className="h-3 w-3 text-muted-foreground" />
-                  <span className="truncate">{customer.name}</span>
-                  {customer.phone && <span className="text-muted-foreground text-xs">({customer.phone})</span>}
-                  <Button variant="ghost" size="icon" className="h-5 w-5 ml-auto" onClick={() => setCustomer(null)}>
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ) : (
-                <Button variant="outline" size="sm" className="w-full" onClick={() => setIsCustomerOpen(true)}>
-                  <User className="h-3 w-3 mr-1" /> Add Customer
-                </Button>
-              )}
+              {categories.map((cat) => (
+                <Badge
+                  key={cat.id}
+                  variant={selectedCategory === cat.id ? 'default' : 'outline'}
+                  className="cursor-pointer whitespace-nowrap"
+                  onClick={() => setSelectedCategory(cat.id)}
+                >
+                  {cat.name}
+                </Badge>
+              ))}
             </div>
-          </CardHeader>
 
-          <CardContent className="flex-1 overflow-hidden p-0">
-            <ScrollArea className="h-full px-4">
-              {items.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Cart is empty</p>
-                  <p className="text-sm">Click products to add them</p>
+            {/* Products Grid */}
+            <ScrollArea className="flex-1">
+              {isLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="h-32 rounded-lg bg-muted animate-pulse" />
+                  ))}
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>No products found</p>
                 </div>
               ) : (
-                <div className="space-y-3 py-2">
-                  {items.map((item) => (
-                    <div key={item.product.id} className="flex gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{item.product.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {fc(item.product.price)} × {item.quantity}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-8 text-center text-sm">{item.quantity}</span>
-                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => removeItem(item.product.id)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+                  {filteredProducts.map((product) => (
+                    <Card
+                      key={product.id}
+                      className="cursor-pointer hover:border-primary transition-colors"
+                      onClick={() => {
+                        addItem(product);
+                        if (isMobile) {
+                          // Brief toast feedback on mobile
+                        }
+                      }}
+                    >
+                      <CardContent className="p-2 sm:p-3">
+                        <div className="aspect-square rounded-md bg-muted mb-2 flex items-center justify-center">
+                          {product.image_url ? (
+                            <img src={product.image_url} alt={product.name} className="w-full h-full object-cover rounded-md" />
+                          ) : (
+                            <span className="text-2xl">📦</span>
+                          )}
+                        </div>
+                        <h3 className="font-medium text-xs sm:text-sm truncate">{product.name}</h3>
+                        <p className="text-primary font-semibold text-sm">{fc(product.price)}</p>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               )}
             </ScrollArea>
-          </CardContent>
 
-          <CardFooter className="flex-col gap-3 border-t pt-4">
-            {/* Totals */}
-            <div className="w-full space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>{fc(getSubtotal())}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tax</span>
-                <span>{fc(getTaxAmount())}</span>
-              </div>
-              {(discountAmount > 0 || discountPercent > 0) && (
-                <div className="flex justify-between text-green-600">
-                  <span className="flex items-center gap-1">
-                    <Tag className="h-3 w-3" />
-                    Discount {discountPercent > 0 ? `(${discountPercent}%)` : ''}
-                  </span>
-                    <span>
-                    -{fc(discountPercent > 0
-                      ? ((getSubtotal() + getTaxAmount()) * discountPercent / 100)
-                      : discountAmount)}
-                    </span>
-                </div>
-              )}
-              <Separator className="my-2" />
-              <div className="flex justify-between font-semibold text-lg">
-                <span>Total</span>
-                <span className="text-primary">{fc(getTotal())}</span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="w-full grid grid-cols-3 gap-2">
-              <PermissionButton permitted={canEdit('pos.retail')} tooltip="You don't have permission to apply discounts" variant="outline" size="sm" onClick={() => setIsDiscountOpen(true)} disabled={items.length === 0}>
-                <Percent className="h-3 w-3 mr-1" /> Disc
-              </PermissionButton>
-              <Button variant="outline" size="sm" onClick={holdCurrentOrder} disabled={items.length === 0}>
-                <PauseCircle className="h-3 w-3 mr-1" /> Hold
+            {/* Mobile: Floating Cart Button */}
+            {isMobile && getItemCount() > 0 && (
+              <Button
+                className="w-full mt-2"
+                onClick={() => setMobileView('cart')}
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                View Cart ({getItemCount()}) — {fc(getTotal())}
               </Button>
-              <PermissionButton permitted={canDelete('pos.retail')} tooltip="You don't have permission to void sales" variant="outline" size="sm" onClick={clearCart} disabled={items.length === 0}>
-                <Trash2 className="h-3 w-3 mr-1" /> Clear
-              </PermissionButton>
-            </div>
-            <Button className="w-full" onClick={() => setIsPaymentOpen(true)} disabled={items.length === 0}>
-              Pay {fc(getTotal())}
-            </Button>
-          </CardFooter>
-        </Card>
+            )}
+          </div>
+        )}
+
+        {/* Cart Section */}
+        {(!isMobile || mobileView === 'cart') && (
+          <Card className={`${isMobile ? 'flex-1' : 'w-80 lg:w-96'} flex flex-col`}>
+            <CardHeader className="pb-2 space-y-2">
+              <CardTitle className="flex items-center justify-between">
+                <span>Current Sale</span>
+                <Badge variant="secondary">{getItemCount()} items</Badge>
+              </CardTitle>
+              {/* Customer display / select */}
+              <div className="flex items-center gap-2">
+                {customer ? (
+                  <div className="flex items-center gap-2 flex-1 text-sm bg-muted rounded-md px-2 py-1">
+                    <User className="h-3 w-3 text-muted-foreground" />
+                    <span className="truncate">{customer.name}</span>
+                    {customer.phone && <span className="text-muted-foreground text-xs hidden sm:inline">({customer.phone})</span>}
+                    <Button variant="ghost" size="icon" className="h-5 w-5 ml-auto" onClick={() => setCustomer(null)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => setIsCustomerOpen(true)}>
+                    <User className="h-3 w-3 mr-1" /> Add Customer
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+
+            <CardContent className="flex-1 overflow-hidden p-0">
+              <ScrollArea className="h-full px-4">
+                {items.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Cart is empty</p>
+                    <p className="text-sm">Click products to add them</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 py-2">
+                    {items.map((item) => (
+                      <div key={item.product.id} className="flex gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{item.product.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {fc(item.product.price)} × {item.quantity}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center text-sm">{item.quantity}</span>
+                          <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => removeItem(item.product.id)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+
+            <CardFooter className="flex-col gap-3 border-t pt-4">
+              {/* Totals */}
+              <div className="w-full space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>{fc(getSubtotal())}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tax</span>
+                  <span>{fc(getTaxAmount())}</span>
+                </div>
+                {(discountAmount > 0 || discountPercent > 0) && (
+                  <div className="flex justify-between text-green-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="h-3 w-3" />
+                      Discount {discountPercent > 0 ? `(${discountPercent}%)` : ''}
+                    </span>
+                      <span>
+                      -{fc(discountPercent > 0
+                        ? ((getSubtotal() + getTaxAmount()) * discountPercent / 100)
+                        : discountAmount)}
+                      </span>
+                  </div>
+                )}
+                <Separator className="my-2" />
+                <div className="flex justify-between font-semibold text-lg">
+                  <span>Total</span>
+                  <span className="text-primary">{fc(getTotal())}</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="w-full grid grid-cols-3 gap-2">
+                <PermissionButton permitted={canEdit('pos.retail')} tooltip="You don't have permission to apply discounts" variant="outline" size="sm" onClick={() => setIsDiscountOpen(true)} disabled={items.length === 0}>
+                  <Percent className="h-3 w-3 mr-1" /> Disc
+                </PermissionButton>
+                <Button variant="outline" size="sm" onClick={holdCurrentOrder} disabled={items.length === 0}>
+                  <PauseCircle className="h-3 w-3 mr-1" /> Hold
+                </Button>
+                <PermissionButton permitted={canDelete('pos.retail')} tooltip="You don't have permission to void sales" variant="outline" size="sm" onClick={clearCart} disabled={items.length === 0}>
+                  <Trash2 className="h-3 w-3 mr-1" /> Clear
+                </PermissionButton>
+              </div>
+              <Button className="w-full" onClick={() => setIsPaymentOpen(true)} disabled={items.length === 0}>
+                Pay {fc(getTotal())}
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
       </div>
 
       {/* ===== DIALOGS ===== */}

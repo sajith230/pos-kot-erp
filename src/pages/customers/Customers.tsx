@@ -179,16 +179,16 @@ export default function Customers() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Customers</h1>
           <p className="text-muted-foreground">Manage your customer relationships</p>
         </div>
         <PermissionButton permitted={canCreate('customers')} onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Add Customer</PermissionButton>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
@@ -228,15 +228,16 @@ export default function Customers() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead><SortButton label="Name" field="name" /></TableHead>
                 <TableHead>Phone</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead className="text-right"><SortButton label="Loyalty" field="loyalty_points" /></TableHead>
+                <TableHead className="hidden md:table-cell">Email</TableHead>
+                <TableHead className="text-right hidden sm:table-cell"><SortButton label="Loyalty" field="loyalty_points" /></TableHead>
                 <TableHead className="text-right"><SortButton label="Total Spent" field="total_spent" /></TableHead>
-                <TableHead className="text-right"><SortButton label="Visits" field="visit_count" /></TableHead>
+                <TableHead className="text-right hidden lg:table-cell"><SortButton label="Visits" field="visit_count" /></TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -249,12 +250,12 @@ export default function Customers() {
                 <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openDetail(c)}>
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell>{c.phone || '—'}</TableCell>
-                  <TableCell>{c.email || '—'}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="hidden md:table-cell">{c.email || '—'}</TableCell>
+                  <TableCell className="text-right hidden sm:table-cell">
                     <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-accent-foreground" />{c.loyalty_points || 0}</span>
                   </TableCell>
                   <TableCell className="text-right">{fc(c.total_spent || 0)}</TableCell>
-                  <TableCell className="text-right">{c.visit_count || 0}</TableCell>
+                  <TableCell className="text-right hidden lg:table-cell">{c.visit_count || 0}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openDetail(c); }}><Eye className="h-4 w-4" /></Button>
@@ -266,6 +267,7 @@ export default function Customers() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

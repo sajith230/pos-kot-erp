@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import BarcodeScanner from '@/components/barcode/BarcodeScanner';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -493,7 +494,7 @@ export default function RestaurantPOS() {
   return (
     <div className="flex flex-col h-[calc(100vh-120px)]">
       {/* Order Type Tabs */}
-      <div className="flex gap-1 mb-3 bg-muted p-1 rounded-lg w-fit">
+      <div className="flex gap-1 mb-3 bg-muted p-1 rounded-lg w-fit overflow-x-auto">
         {([
           { type: 'dine_in' as const, icon: UtensilsCrossed, label: 'Dine-in' },
           { type: 'takeaway' as const, icon: ShoppingBag, label: 'Takeaway' },
@@ -503,17 +504,17 @@ export default function RestaurantPOS() {
             key={type}
             variant={orderType === type ? 'default' : 'ghost'}
             size="sm"
-            className="gap-1.5"
+            className="gap-1.5 whitespace-nowrap"
             onClick={() => handleOrderTypeChange(type)}
             disabled={!!activeOrder}
           >
             <Icon className="h-4 w-4" />
-            {label}
+            <span className="hidden sm:inline">{label}</span>
           </Button>
         ))}
       </div>
 
-      <div className="flex gap-4 flex-1 min-h-0">
+      <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
         {showFloorPlan ? (
           <TableFloorPlan
             tables={tables}
@@ -523,7 +524,7 @@ export default function RestaurantPOS() {
             onTablesChange={fetchTables}
           />
         ) : orderType !== 'dine_in' && !activeOrder ? (
-          <div className="flex-1 flex gap-4">
+          <div className="flex-1 flex flex-col md:flex-row gap-4">
             {/* Active Orders List */}
             <div className="flex-1 flex flex-col">
               <h3 className="font-semibold text-sm mb-2 text-muted-foreground uppercase tracking-wide">
@@ -559,7 +560,7 @@ export default function RestaurantPOS() {
             </div>
 
             {/* New Order Card */}
-            <Card className="w-72 shrink-0 self-start">
+            <Card className="w-full md:w-72 shrink-0 self-start">
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center">
                   {orderType === 'takeaway' ? (
@@ -639,7 +640,7 @@ export default function RestaurantPOS() {
                 )}
               </ScrollArea>
             </div>
-            <Card className="w-80 flex flex-col">
+            <Card className="w-full md:w-80 flex flex-col">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center justify-between text-base">
                   <span className="flex items-center gap-2">
