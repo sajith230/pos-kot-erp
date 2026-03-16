@@ -181,6 +181,36 @@ export default function BarcodeScanner({ open, onOpenChange, onScan, continuous 
               </div>
             </>
           )}
+          {/* Manual barcode entry */}
+          <div className="border-t pt-3">
+            <label className="text-xs text-muted-foreground flex items-center gap-1 mb-1.5">
+              <Keyboard className="h-3.5 w-3.5" />
+              Or enter barcode manually
+            </label>
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const code = manualCode.trim();
+                if (!code) return;
+                playBeep();
+                onScan(code);
+                setManualCode('');
+                if (!continuous) onOpenChange(false);
+              }}
+            >
+              <Input
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                placeholder="Enter barcode manually"
+                className="flex-1"
+                autoComplete="off"
+              />
+              <Button type="submit" size="sm" disabled={!manualCode.trim()}>
+                Submit
+              </Button>
+            </form>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
