@@ -535,8 +535,15 @@ export default function RetailPOS() {
     setIsReceiptOpen(false);
   }
 
-  const isMobile = useIsMobile();
+  const [isCompact, setIsCompact] = useState(window.innerWidth < 1024);
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 1023px)');
+    const onChange = () => setIsCompact(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
 
   if (!business) {
     return (
