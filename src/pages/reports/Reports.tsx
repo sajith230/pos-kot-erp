@@ -754,14 +754,15 @@ export default function Reports() {
             <CardHeader><CardTitle>Profit Margin Analysis</CardTitle></CardHeader>
             <CardContent>
               {profitProducts.length > 0 ? (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Product</TableHead>
-                      <TableHead className="text-right">Cost Price</TableHead>
-                      <TableHead className="text-right">Sell Price</TableHead>
+                      <TableHead className="text-right hidden sm:table-cell">Cost Price</TableHead>
+                      <TableHead className="text-right hidden sm:table-cell">Sell Price</TableHead>
                       <TableHead className="text-right">Margin %</TableHead>
-                      <TableHead className="text-right">Units Sold</TableHead>
+                      <TableHead className="text-right hidden md:table-cell">Units Sold</TableHead>
                       <TableHead className="text-right">Total Profit</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -769,19 +770,20 @@ export default function Reports() {
                     {profitProducts.map((p) => (
                       <TableRow key={p.productId}>
                         <TableCell className="font-medium">{p.name}</TableCell>
-                        <TableCell className="text-right">{fc(p.costPrice)}</TableCell>
-                        <TableCell className="text-right">{fc(p.sellPrice)}</TableCell>
+                        <TableCell className="text-right hidden sm:table-cell">{fc(p.costPrice)}</TableCell>
+                        <TableCell className="text-right hidden sm:table-cell">{fc(p.sellPrice)}</TableCell>
                         <TableCell className="text-right">
                           <span className={cn(p.marginPercent >= 50 ? 'text-success' : p.marginPercent >= 20 ? 'text-warning' : 'text-destructive')}>
                             {p.marginPercent.toFixed(1)}%
                           </span>
                         </TableCell>
-                        <TableCell className="text-right">{p.unitsSold}</TableCell>
+                        <TableCell className="text-right hidden md:table-cell">{p.unitsSold}</TableCell>
                         <TableCell className="text-right font-medium">{fc(p.totalProfit)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-32 text-muted-foreground">
                   {inventoryLoading ? 'Loading...' : 'No product data available'}
