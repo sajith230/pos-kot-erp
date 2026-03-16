@@ -748,8 +748,8 @@ export default function RetailPOS() {
         )}
 
         {/* Cart Section */}
-        {(!isMobile || mobileView === 'cart') && (
-          <Card className={`${isMobile ? 'flex-1' : 'w-80 lg:w-96'} flex flex-col`}>
+        {(!isCompact || mobileView === 'cart') && (
+          <Card className={`${isCompact ? 'flex-1' : 'w-80 lg:w-96'} flex flex-col`}>
             <CardHeader className="pb-2 space-y-2">
               <CardTitle className="flex items-center justify-between">
                 <span>Current Sale</span>
