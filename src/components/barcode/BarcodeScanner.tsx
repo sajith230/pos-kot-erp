@@ -33,6 +33,14 @@ export default function BarcodeScanner({ open, onOpenChange, onScan, continuous 
   const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
   const [activeCameraIdx, setActiveCameraIdx] = useState(0);
   const [manualCode, setManualCode] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const validateBarcode = (code: string): string | null => {
+    if (code.length < 3) return 'Barcode must be at least 3 characters';
+    if (code.length > 50) return 'Barcode must be 50 characters or fewer';
+    if (!/^[A-Za-z0-9\-.\s]+$/.test(code)) return 'Only letters, numbers, hyphens, dots, and spaces allowed';
+    return null;
+  };
   const containerRef = useRef<string>('barcode-reader-' + Math.random().toString(36).slice(2));
 
   const stopScanner = useCallback(async () => {
