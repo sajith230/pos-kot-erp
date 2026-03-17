@@ -106,7 +106,7 @@ export default function RoomManagement() {
       ...(editRoom?.id ? { id: editRoom.id } : {}),
       name: fd.get('name') as string,
       room_number: fd.get('room_number') as string,
-      room_type: fd.get('room_type') as string,
+      room_type: fd.get('room_type') as 'standard' | 'deluxe' | 'suite' | 'premium',
       floor: Number(fd.get('floor')) || 1,
       capacity: Number(fd.get('capacity')) || 2,
       price_per_night: Number(fd.get('price_per_night')) || 0,
