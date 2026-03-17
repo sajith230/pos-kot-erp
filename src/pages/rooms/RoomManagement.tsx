@@ -51,9 +51,8 @@ export default function RoomManagement() {
     enabled: !!business?.id,
   });
 
-  type RoomInput = { id?: string; name: string; room_number: string; room_type: 'standard' | 'deluxe' | 'suite' | 'premium'; floor: number; capacity: number; price_per_night: number; description: string | null };
   const upsertRoom = useMutation({
-    mutationFn: async (room: { id?: string; name: string; room_number: string; room_type: string; floor: number; capacity: number; price_per_night: number; description: string | null }) => {
+    mutationFn: async (room: { id?: string; name: string; room_number: string; room_type: 'standard' | 'deluxe' | 'suite' | 'premium'; floor: number; capacity: number; price_per_night: number; description: string | null }) => {
       if (room.id) {
         const { id, ...rest } = room;
         const { error } = await supabase.from('rooms').update(rest).eq('id', id);
