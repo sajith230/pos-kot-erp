@@ -25,6 +25,10 @@ import GeneralSettings from "./pages/settings/GeneralSettings";
 import UserManagement from "./pages/settings/UserManagement";
 import RoleManagement from "./pages/settings/RoleManagement";
 import KitchenManagement from "./pages/settings/KitchenManagement";
+import RoomManagement from "./pages/rooms/RoomManagement";
+import RoomBookingsPage from "./pages/rooms/RoomBookings";
+import BanquetHalls from "./pages/banquet/BanquetHalls";
+import BanquetBookingsPage from "./pages/banquet/BanquetBookings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -82,6 +86,20 @@ const App = () => (
               </Route>
               <Route element={<PermissionGuard module="reports" />}>
                 <Route path="/reports" element={<Reports />} />
+              </Route>
+
+              {/* Hospitality routes */}
+              <Route element={<PermissionGuard module="rooms" />}>
+                <Route path="/rooms" element={<RoomManagement />} />
+              </Route>
+              <Route element={<PermissionGuard module="rooms.bookings" />}>
+                <Route path="/rooms/bookings" element={<RoomBookingsPage />} />
+              </Route>
+              <Route element={<PermissionGuard module="banquet" />}>
+                <Route path="/banquet" element={<BanquetHalls />} />
+              </Route>
+              <Route element={<PermissionGuard module="banquet.bookings" />}>
+                <Route path="/banquet/bookings" element={<BanquetBookingsPage />} />
               </Route>
 
               {/* Settings routes */}

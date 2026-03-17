@@ -274,6 +274,98 @@ export interface Recipe {
   ingredient?: Product;
 }
 
+// Room & Banquet types
+export type RoomType = 'standard' | 'deluxe' | 'suite' | 'premium';
+export type RoomStatus = 'available' | 'occupied' | 'reserved' | 'maintenance' | 'cleaning';
+export type RoomBookingStatus = 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled' | 'no_show';
+export type BanquetHallStatus = 'available' | 'booked' | 'maintenance';
+export type BanquetBookingStatus = 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface Room {
+  id: string;
+  business_id: string;
+  branch_id: string;
+  name: string;
+  room_number: string;
+  room_type: RoomType;
+  floor: number | null;
+  capacity: number | null;
+  price_per_night: number;
+  amenities: unknown;
+  description?: string | null;
+  image_url?: string | null;
+  status: RoomStatus | null;
+  is_active: boolean | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RoomBooking {
+  id: string;
+  business_id: string;
+  branch_id: string;
+  room_id: string;
+  customer_id?: string | null;
+  booking_number: string;
+  check_in: string;
+  check_out: string;
+  actual_check_in?: string | null;
+  actual_check_out?: string | null;
+  guest_count: number | null;
+  total_amount: number;
+  advance_paid: number | null;
+  status: RoomBookingStatus | null;
+  notes?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  room?: Room;
+  customer?: Customer;
+}
+
+export interface BanquetHall {
+  id: string;
+  business_id: string;
+  branch_id: string;
+  name: string;
+  capacity: number | null;
+  price_per_hour: number | null;
+  price_per_day: number | null;
+  amenities: unknown;
+  description?: string | null;
+  image_url?: string | null;
+  status: BanquetHallStatus | null;
+  is_active: boolean | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BanquetBooking {
+  id: string;
+  business_id: string;
+  branch_id: string;
+  hall_id: string;
+  customer_id?: string | null;
+  booking_number: string;
+  event_name: string;
+  event_type?: string | null;
+  event_date: string;
+  start_time: string;
+  end_time: string;
+  guest_count: number | null;
+  total_amount: number;
+  advance_paid: number | null;
+  catering_included: boolean | null;
+  special_requirements?: string | null;
+  status: BanquetBookingStatus | null;
+  notes?: string | null;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  hall?: BanquetHall;
+  customer?: Customer;
+}
+
 // Cart types for POS
 export interface CartItem {
   product: Product;

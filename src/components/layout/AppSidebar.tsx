@@ -15,6 +15,10 @@ import {
   UserCog,
   Shield,
   LogOut,
+  BedDouble,
+  CalendarCheck,
+  Castle,
+  PartyPopper,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import {
@@ -64,6 +68,13 @@ const crmNavItems: NavItem[] = [
   { title: 'Customers', url: '/customers', icon: Users, module: 'customers' },
 ];
 
+const hospitalityNavItems: NavItem[] = [
+  { title: 'Rooms', url: '/rooms', icon: BedDouble, module: 'rooms' },
+  { title: 'Room Bookings', url: '/rooms/bookings', icon: CalendarCheck, module: 'rooms.bookings' },
+  { title: 'Banquet Halls', url: '/banquet', icon: Castle, module: 'banquet' },
+  { title: 'Hall Bookings', url: '/banquet/bookings', icon: PartyPopper, module: 'banquet.bookings' },
+];
+
 const reportsNavItems: NavItem[] = [
   { title: 'Reports', url: '/reports', icon: BarChart3, module: 'reports' },
 ];
@@ -91,6 +102,7 @@ export function AppSidebar() {
   const filteredPos = filterItems(posNavItems);
   const filteredInventory = filterItems(inventoryNavItems);
   const filteredCrm = filterItems(crmNavItems);
+  const filteredHospitality = filterItems(hospitalityNavItems);
   const filteredReports = filterItems(reportsNavItems);
   const filteredSettings = filterItems(settingsNavItems);
 
@@ -156,6 +168,7 @@ export function AppSidebar() {
         {renderGroup('Point of Sale', filteredPos)}
         {renderGroup('Inventory', filteredInventory)}
         {renderGroup('CRM', filteredCrm)}
+        {renderGroup('Hospitality', filteredHospitality)}
         {renderGroup('Analytics', filteredReports)}
         {renderGroup('Settings', filteredSettings)}
       </SidebarContent>
