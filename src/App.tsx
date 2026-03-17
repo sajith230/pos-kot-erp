@@ -88,6 +88,20 @@ const App = () => (
                 <Route path="/reports" element={<Reports />} />
               </Route>
 
+              {/* Hospitality routes */}
+              <Route element={<PermissionGuard module="rooms" />}>
+                <Route path="/rooms" element={<RoomManagement />} />
+              </Route>
+              <Route element={<PermissionGuard module="rooms.bookings" />}>
+                <Route path="/rooms/bookings" element={<RoomBookingsPage />} />
+              </Route>
+              <Route element={<PermissionGuard module="banquet" />}>
+                <Route path="/banquet" element={<BanquetHalls />} />
+              </Route>
+              <Route element={<PermissionGuard module="banquet.bookings" />}>
+                <Route path="/banquet/bookings" element={<BanquetBookingsPage />} />
+              </Route>
+
               {/* Settings routes */}
               <Route element={<PermissionGuard module="settings.general" />}>
                 <Route path="/settings" element={<GeneralSettings />} />

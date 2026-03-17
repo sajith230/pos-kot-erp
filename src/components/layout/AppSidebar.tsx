@@ -168,6 +168,7 @@ export function AppSidebar() {
         {renderGroup('Point of Sale', filteredPos)}
         {renderGroup('Inventory', filteredInventory)}
         {renderGroup('CRM', filteredCrm)}
+        {renderGroup('Hospitality', filteredHospitality)}
         {renderGroup('Analytics', filteredReports)}
         {renderGroup('Settings', filteredSettings)}
       </SidebarContent>
