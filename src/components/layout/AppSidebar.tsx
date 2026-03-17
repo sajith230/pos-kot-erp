@@ -68,6 +68,13 @@ const crmNavItems: NavItem[] = [
   { title: 'Customers', url: '/customers', icon: Users, module: 'customers' },
 ];
 
+const hospitalityNavItems: NavItem[] = [
+  { title: 'Rooms', url: '/rooms', icon: BedDouble, module: 'rooms' },
+  { title: 'Room Bookings', url: '/rooms/bookings', icon: CalendarCheck, module: 'rooms.bookings' },
+  { title: 'Banquet Halls', url: '/banquet', icon: Castle, module: 'banquet' },
+  { title: 'Hall Bookings', url: '/banquet/bookings', icon: PartyPopper, module: 'banquet.bookings' },
+];
+
 const reportsNavItems: NavItem[] = [
   { title: 'Reports', url: '/reports', icon: BarChart3, module: 'reports' },
 ];
