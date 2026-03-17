@@ -25,6 +25,10 @@ import GeneralSettings from "./pages/settings/GeneralSettings";
 import UserManagement from "./pages/settings/UserManagement";
 import RoleManagement from "./pages/settings/RoleManagement";
 import KitchenManagement from "./pages/settings/KitchenManagement";
+import RoomManagement from "./pages/rooms/RoomManagement";
+import RoomBookingsPage from "./pages/rooms/RoomBookings";
+import BanquetHalls from "./pages/banquet/BanquetHalls";
+import BanquetBookingsPage from "./pages/banquet/BanquetBookings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
