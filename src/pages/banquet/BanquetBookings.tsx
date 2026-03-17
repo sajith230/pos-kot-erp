@@ -43,7 +43,7 @@ export default function BanquetBookings() {
         .eq('business_id', business!.id)
         .order('event_date', { ascending: false });
       if (error) throw error;
-      return data.map((b: any) => ({ ...b, hall: b.banquet_halls, customer: b.customers })) as BanquetBooking[];
+      return data.map((b: any) => ({ ...b, hall: b.banquet_halls, customer: b.customers })) as unknown as BanquetBooking[];
     },
     enabled: !!business?.id,
   });
@@ -53,7 +53,7 @@ export default function BanquetBookings() {
     queryFn: async () => {
       const { data, error } = await supabase.from('banquet_halls').select('*').eq('business_id', business!.id).eq('is_active', true);
       if (error) throw error;
-      return data as BanquetHall[];
+      return data as unknown as BanquetHall[];
     },
     enabled: !!business?.id && dialogOpen,
   });
@@ -71,13 +71,13 @@ export default function BanquetBookings() {
   const createBooking = useMutation({
     mutationFn: async (booking: any) => {
       const num = `BQ-${Date.now().toString(36).toUpperCase()}`;
-      const { error } = await supabase.from('banquet_bookings').insert({
+      const { error } = await supabase.from('banquet_bookings').insert([{
         ...booking,
         booking_number: num,
         business_id: business!.id,
         branch_id: branch!.id,
         created_by: user!.id,
-      });
+      }]);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -89,8 +89,8 @@ export default function BanquetBookings() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: BanquetBookingStatus }) => {
-      const { error } = await supabase.from('banquet_bookings').update({ status }).eq('id', id);
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from('banquet_bookings').update({ status } as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -104,6 +104,9 @@ export default function BanquetBookings() {
     if (search && !b.booking_number.toLowerCase().includes(search.toLowerCase()) && !b.event_name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const canCreateBooking = canCreate('banquet.bookings');
+  const canEditBooking = canEdit('banquet.bookings');
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -132,56 +135,53 @@ export default function BanquetBookings() {
           <h1 className="text-2xl font-bold text-foreground">Banquet Bookings</h1>
           <p className="text-muted-foreground text-sm">Manage event and function bookings</p>
         </div>
-        <PermissionButton module="banquet.bookings" action="can_create">
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />New Booking</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
-              <DialogHeader><DialogTitle>New Banquet Booking</DialogTitle></DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <PermissionButton permitted={canCreateBooking}><Plus className="h-4 w-4 mr-2" />New Booking</PermissionButton>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>New Banquet Booking</DialogTitle></DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label>Hall</Label>
+                <select name="hall_id" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <option value="">Select hall...</option>
+                  {halls.map((h) => <option key={h.id} value={h.id}>{h.name} (Cap: {h.capacity})</option>)}
+                </select>
+              </div>
+              <div><Label>Event Name</Label><Input name="event_name" required /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>Event Type</Label><Input name="event_type" placeholder="Wedding, Conference..." /></div>
                 <div>
-                  <Label>Hall</Label>
-                  <select name="hall_id" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option value="">Select hall...</option>
-                    {halls.map((h) => <option key={h.id} value={h.id}>{h.name} (Cap: {h.capacity})</option>)}
+                  <Label>Customer</Label>
+                  <select name="customer_id" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    <option value="">Walk-in</option>
+                    {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
-                <div><Label>Event Name</Label><Input name="event_name" required /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Event Type</Label><Input name="event_type" placeholder="Wedding, Conference..." /></div>
-                  <div>
-                    <Label>Customer</Label>
-                    <select name="customer_id" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                      <option value="">Walk-in</option>
-                      {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div><Label>Date</Label><Input name="event_date" type="date" required /></div>
-                  <div><Label>Start</Label><Input name="start_time" type="time" required /></div>
-                  <div><Label>End</Label><Input name="end_time" type="time" required /></div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div><Label>Guests</Label><Input name="guest_count" type="number" defaultValue={50} /></div>
-                  <div><Label>Total</Label><Input name="total_amount" type="number" step="0.01" required /></div>
-                  <div><Label>Advance</Label><Input name="advance_paid" type="number" step="0.01" defaultValue={0} /></div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox id="catering_included" name="catering_included" />
-                  <Label htmlFor="catering_included">Catering included</Label>
-                </div>
-                <div><Label>Special Requirements</Label><Textarea name="special_requirements" /></div>
-                <div><Label>Notes</Label><Textarea name="notes" /></div>
-                <Button type="submit" className="w-full" disabled={createBooking.isPending}>Create Booking</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </PermissionButton>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div><Label>Date</Label><Input name="event_date" type="date" required /></div>
+                <div><Label>Start</Label><Input name="start_time" type="time" required /></div>
+                <div><Label>End</Label><Input name="end_time" type="time" required /></div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div><Label>Guests</Label><Input name="guest_count" type="number" defaultValue={50} /></div>
+                <div><Label>Total</Label><Input name="total_amount" type="number" step="0.01" required /></div>
+                <div><Label>Advance</Label><Input name="advance_paid" type="number" step="0.01" defaultValue={0} /></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="catering_included" name="catering_included" />
+                <Label htmlFor="catering_included">Catering included</Label>
+              </div>
+              <div><Label>Special Requirements</Label><Textarea name="special_requirements" /></div>
+              <div><Label>Notes</Label><Textarea name="notes" /></div>
+              <Button type="submit" className="w-full" disabled={createBooking.isPending}>Create Booking</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
         <Input placeholder="Search booking # or event..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
         <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -232,8 +232,8 @@ export default function BanquetBookings() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {canEdit('banquet.bookings') && b.status !== 'completed' && b.status !== 'cancelled' && (
-                      <Select value={b.status || 'confirmed'} onValueChange={(val) => updateStatus.mutate({ id: b.id, status: val as BanquetBookingStatus })}>
+                    {canEditBooking && b.status !== 'completed' && b.status !== 'cancelled' && (
+                      <Select value={b.status || 'confirmed'} onValueChange={(val) => updateStatus.mutate({ id: b.id, status: val })}>
                         <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {(['confirmed', 'in_progress', 'completed', 'cancelled'] as BanquetBookingStatus[]).map((s) => (

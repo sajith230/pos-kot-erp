@@ -6,7 +6,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { RoomBooking, Room, RoomBookingStatus } from '@/types/database';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,7 +43,7 @@ export default function RoomBookings() {
         .eq('business_id', business!.id)
         .order('check_in', { ascending: false });
       if (error) throw error;
-      return data.map((b: any) => ({ ...b, room: b.rooms, customer: b.customers })) as RoomBooking[];
+      return data.map((b: any) => ({ ...b, room: b.rooms, customer: b.customers })) as unknown as RoomBooking[];
     },
     enabled: !!business?.id,
   });
@@ -59,7 +58,7 @@ export default function RoomBookings() {
         .eq('status', 'available')
         .eq('is_active', true);
       if (error) throw error;
-      return data as Room[];
+      return data as unknown as Room[];
     },
     enabled: !!business?.id && dialogOpen,
   });
@@ -77,16 +76,15 @@ export default function RoomBookings() {
   const createBooking = useMutation({
     mutationFn: async (booking: any) => {
       const num = `RB-${Date.now().toString(36).toUpperCase()}`;
-      const { error } = await supabase.from('room_bookings').insert({
+      const { error } = await supabase.from('room_bookings').insert([{
         ...booking,
         booking_number: num,
         business_id: business!.id,
         branch_id: branch!.id,
         created_by: user!.id,
-      });
+      }]);
       if (error) throw error;
-      // Mark room as reserved
-      await supabase.from('rooms').update({ status: 'reserved' }).eq('id', booking.room_id);
+      await supabase.from('rooms').update({ status: 'reserved' } as any).eq('id', booking.room_id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['room-bookings'] });
@@ -98,18 +96,15 @@ export default function RoomBookings() {
   });
 
   const updateBookingStatus = useMutation({
-    mutationFn: async ({ id, status, roomId }: { id: string; status: RoomBookingStatus; roomId: string }) => {
+    mutationFn: async ({ id, status, roomId }: { id: string; status: string; roomId: string }) => {
       const updates: any = { status };
       if (status === 'checked_in') updates.actual_check_in = new Date().toISOString();
       if (status === 'checked_out') updates.actual_check_out = new Date().toISOString();
-
       const { error } = await supabase.from('room_bookings').update(updates).eq('id', id);
       if (error) throw error;
-
-      // Update room status
       const roomStatus = status === 'checked_in' ? 'occupied' : status === 'checked_out' ? 'cleaning' : status === 'cancelled' ? 'available' : undefined;
       if (roomStatus) {
-        await supabase.from('rooms').update({ status: roomStatus }).eq('id', roomId);
+        await supabase.from('rooms').update({ status: roomStatus } as any).eq('id', roomId);
       }
     },
     onSuccess: () => {
@@ -124,6 +119,9 @@ export default function RoomBookings() {
     if (search && !b.booking_number.toLowerCase().includes(search.toLowerCase()) && !b.customer?.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const canCreateBooking = canCreate('rooms.bookings');
+  const canEditBooking = canEdit('rooms.bookings');
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -147,43 +145,41 @@ export default function RoomBookings() {
           <h1 className="text-2xl font-bold text-foreground">Room Bookings</h1>
           <p className="text-muted-foreground text-sm">Manage reservations and check-ins</p>
         </div>
-        <PermissionButton module="rooms.bookings" action="can_create">
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />New Booking</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg w-full">
-              <DialogHeader><DialogTitle>New Room Booking</DialogTitle></DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label>Room</Label>
-                  <select name="room_id" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option value="">Select room...</option>
-                    {availableRooms.map((r) => <option key={r.id} value={r.id}>{r.name} (#{r.room_number})</option>)}
-                  </select>
-                </div>
-                <div>
-                  <Label>Customer</Label>
-                  <select name="customer_id" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option value="">Walk-in guest</option>
-                    {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Check-in</Label><Input name="check_in" type="date" required /></div>
-                  <div><Label>Check-out</Label><Input name="check_out" type="date" required /></div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div><Label>Guests</Label><Input name="guest_count" type="number" defaultValue={1} min={1} /></div>
-                  <div><Label>Total</Label><Input name="total_amount" type="number" step="0.01" required /></div>
-                  <div><Label>Advance</Label><Input name="advance_paid" type="number" step="0.01" defaultValue={0} /></div>
-                </div>
-                <div><Label>Notes</Label><Textarea name="notes" /></div>
-                <Button type="submit" className="w-full" disabled={createBooking.isPending}>Create Booking</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </PermissionButton>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <PermissionButton permitted={canCreateBooking}><Plus className="h-4 w-4 mr-2" />New Booking</PermissionButton>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg w-full">
+            <DialogHeader><DialogTitle>New Room Booking</DialogTitle></DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label>Room</Label>
+                <select name="room_id" required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <option value="">Select room...</option>
+                  {availableRooms.map((r) => <option key={r.id} value={r.id}>{r.name} (#{r.room_number})</option>)}
+                </select>
+              </div>
+              <div>
+                <Label>Customer</Label>
+                <select name="customer_id" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <option value="">Walk-in guest</option>
+                  {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>Check-in</Label><Input name="check_in" type="date" required /></div>
+                <div><Label>Check-out</Label><Input name="check_out" type="date" required /></div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div><Label>Guests</Label><Input name="guest_count" type="number" defaultValue={1} min={1} /></div>
+                <div><Label>Total</Label><Input name="total_amount" type="number" step="0.01" required /></div>
+                <div><Label>Advance</Label><Input name="advance_paid" type="number" step="0.01" defaultValue={0} /></div>
+              </div>
+              <div><Label>Notes</Label><Textarea name="notes" /></div>
+              <Button type="submit" className="w-full" disabled={createBooking.isPending}>Create Booking</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filters */}
@@ -238,12 +234,12 @@ export default function RoomBookings() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      {b.status === 'confirmed' && canEdit('rooms.bookings') && (
+                      {b.status === 'confirmed' && canEditBooking && (
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => updateBookingStatus.mutate({ id: b.id, status: 'checked_in', roomId: b.room_id })}>
                           <LogIn className="h-3 w-3 mr-1" />In
                         </Button>
                       )}
-                      {b.status === 'checked_in' && canEdit('rooms.bookings') && (
+                      {b.status === 'checked_in' && canEditBooking && (
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => updateBookingStatus.mutate({ id: b.id, status: 'checked_out', roomId: b.room_id })}>
                           <LogOut className="h-3 w-3 mr-1" />Out
                         </Button>

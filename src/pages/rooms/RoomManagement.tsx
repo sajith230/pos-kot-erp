@@ -46,22 +46,23 @@ export default function RoomManagement() {
         .eq('business_id', business!.id)
         .order('room_number');
       if (error) throw error;
-      return data as Room[];
+      return data as unknown as Room[];
     },
     enabled: !!business?.id,
   });
 
   const upsertRoom = useMutation({
-    mutationFn: async (room: Partial<Room>) => {
+    mutationFn: async (room: { id?: string; name: string; room_number: string; room_type: string; floor: number; capacity: number; price_per_night: number; description: string | null }) => {
       if (room.id) {
-        const { error } = await supabase.from('rooms').update(room).eq('id', room.id);
+        const { id, ...rest } = room;
+        const { error } = await supabase.from('rooms').update(rest).eq('id', id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('rooms').insert({
+        const { error } = await supabase.from('rooms').insert([{
           ...room,
           business_id: business!.id,
           branch_id: branch!.id,
-        });
+        }]);
         if (error) throw error;
       }
     },
@@ -75,8 +76,8 @@ export default function RoomManagement() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: RoomStatus }) => {
-      const { error } = await supabase.from('rooms').update({ status }).eq('id', id);
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from('rooms').update({ status } as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -105,13 +106,16 @@ export default function RoomManagement() {
       ...(editRoom?.id ? { id: editRoom.id } : {}),
       name: fd.get('name') as string,
       room_number: fd.get('room_number') as string,
-      room_type: fd.get('room_type') as RoomType,
+      room_type: fd.get('room_type') as string,
       floor: Number(fd.get('floor')) || 1,
       capacity: Number(fd.get('capacity')) || 2,
       price_per_night: Number(fd.get('price_per_night')) || 0,
       description: (fd.get('description') as string) || null,
     });
   }
+
+  const canCreateRoom = canCreate('rooms');
+  const canEditRoom = canEdit('rooms');
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -120,37 +124,35 @@ export default function RoomManagement() {
           <h1 className="text-2xl font-bold text-foreground">Room Management</h1>
           <p className="text-muted-foreground text-sm">Manage hotel rooms and availability</p>
         </div>
-        <PermissionButton module="rooms" action="can_create">
-          <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditRoom(null); }}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />Add Room</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg w-full">
-              <DialogHeader><DialogTitle>{editRoom ? 'Edit Room' : 'Add Room'}</DialogTitle></DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div><Label htmlFor="name">Name</Label><Input id="name" name="name" required defaultValue={editRoom?.name || ''} /></div>
-                  <div><Label htmlFor="room_number">Room #</Label><Input id="room_number" name="room_number" required defaultValue={editRoom?.room_number || ''} /></div>
+        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditRoom(null); }}>
+          <DialogTrigger asChild>
+            <PermissionButton permitted={canCreateRoom}><Plus className="h-4 w-4 mr-2" />Add Room</PermissionButton>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg w-full">
+            <DialogHeader><DialogTitle>{editRoom ? 'Edit Room' : 'Add Room'}</DialogTitle></DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label htmlFor="name">Name</Label><Input id="name" name="name" required defaultValue={editRoom?.name || ''} /></div>
+                <div><Label htmlFor="room_number">Room #</Label><Input id="room_number" name="room_number" required defaultValue={editRoom?.room_number || ''} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Type</Label>
+                  <select name="room_type" defaultValue={editRoom?.room_type || 'standard'} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    {roomTypes.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                  </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Type</Label>
-                    <select name="room_type" defaultValue={editRoom?.room_type || 'standard'} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                      {roomTypes.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-                    </select>
-                  </div>
-                  <div><Label htmlFor="floor">Floor</Label><Input id="floor" name="floor" type="number" defaultValue={editRoom?.floor || 1} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><Label htmlFor="capacity">Capacity</Label><Input id="capacity" name="capacity" type="number" defaultValue={editRoom?.capacity || 2} /></div>
-                  <div><Label htmlFor="price_per_night">Price/Night</Label><Input id="price_per_night" name="price_per_night" type="number" step="0.01" defaultValue={editRoom?.price_per_night || 0} /></div>
-                </div>
-                <div><Label htmlFor="description">Description</Label><Textarea id="description" name="description" defaultValue={editRoom?.description || ''} /></div>
-                <Button type="submit" className="w-full" disabled={upsertRoom.isPending}>{editRoom ? 'Update' : 'Create'} Room</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </PermissionButton>
+                <div><Label htmlFor="floor">Floor</Label><Input id="floor" name="floor" type="number" defaultValue={editRoom?.floor || 1} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label htmlFor="capacity">Capacity</Label><Input id="capacity" name="capacity" type="number" defaultValue={editRoom?.capacity || 2} /></div>
+                <div><Label htmlFor="price_per_night">Price/Night</Label><Input id="price_per_night" name="price_per_night" type="number" step="0.01" defaultValue={editRoom?.price_per_night || 0} /></div>
+              </div>
+              <div><Label htmlFor="description">Description</Label><Textarea id="description" name="description" defaultValue={editRoom?.description || ''} /></div>
+              <Button type="submit" className="w-full" disabled={upsertRoom.isPending}>{editRoom ? 'Update' : 'Create'} Room</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats */}
@@ -218,10 +220,10 @@ export default function RoomManagement() {
                 <p className="text-xs text-muted-foreground">Capacity: {room.capacity} guests</p>
 
                 <div className="flex gap-2">
-                  {canEdit('rooms') && (
+                  {canEditRoom && (
                     <Select
                       value={room.status || 'available'}
-                      onValueChange={(val) => updateStatus.mutate({ id: room.id, status: val as RoomStatus })}
+                      onValueChange={(val) => updateStatus.mutate({ id: room.id, status: val })}
                     >
                       <SelectTrigger className="h-8 text-xs flex-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -229,7 +231,7 @@ export default function RoomManagement() {
                       </SelectContent>
                     </Select>
                   )}
-                  {canEdit('rooms') && (
+                  {canEditRoom && (
                     <Button variant="outline" size="sm" className="h-8" onClick={() => { setEditRoom(room); setDialogOpen(true); }}>
                       Edit
                     </Button>

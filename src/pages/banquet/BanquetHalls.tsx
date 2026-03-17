@@ -41,22 +41,23 @@ export default function BanquetHalls() {
         .eq('business_id', business!.id)
         .order('name');
       if (error) throw error;
-      return data as BanquetHall[];
+      return data as unknown as BanquetHall[];
     },
     enabled: !!business?.id,
   });
 
   const upsertHall = useMutation({
-    mutationFn: async (hall: Partial<BanquetHall>) => {
+    mutationFn: async (hall: { id?: string; name: string; capacity: number; price_per_hour: number; price_per_day: number; description: string | null }) => {
       if (hall.id) {
-        const { error } = await supabase.from('banquet_halls').update(hall).eq('id', hall.id);
+        const { id, ...rest } = hall;
+        const { error } = await supabase.from('banquet_halls').update(rest).eq('id', id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('banquet_halls').insert({
+        const { error } = await supabase.from('banquet_halls').insert([{
           ...hall,
           business_id: business!.id,
           branch_id: branch!.id,
-        });
+        }]);
         if (error) throw error;
       }
     },
@@ -70,8 +71,8 @@ export default function BanquetHalls() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: BanquetHallStatus }) => {
-      const { error } = await supabase.from('banquet_halls').update({ status }).eq('id', id);
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from('banquet_halls').update({ status } as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -79,6 +80,9 @@ export default function BanquetHalls() {
       toast({ title: 'Status updated' });
     },
   });
+
+  const canCreateHall = canCreate('banquet');
+  const canEditHall = canEdit('banquet');
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -100,26 +104,24 @@ export default function BanquetHalls() {
           <h1 className="text-2xl font-bold text-foreground">Banquet Halls</h1>
           <p className="text-muted-foreground text-sm">Manage function and banquet halls</p>
         </div>
-        <PermissionButton module="banquet" action="can_create">
-          <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditHall(null); }}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />Add Hall</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg w-full">
-              <DialogHeader><DialogTitle>{editHall ? 'Edit Hall' : 'Add Hall'}</DialogTitle></DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div><Label htmlFor="name">Name</Label><Input id="name" name="name" required defaultValue={editHall?.name || ''} /></div>
-                <div><Label htmlFor="capacity">Capacity</Label><Input id="capacity" name="capacity" type="number" defaultValue={editHall?.capacity || 100} /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><Label htmlFor="price_per_hour">Price/Hour</Label><Input id="price_per_hour" name="price_per_hour" type="number" step="0.01" defaultValue={editHall?.price_per_hour || 0} /></div>
-                  <div><Label htmlFor="price_per_day">Price/Day</Label><Input id="price_per_day" name="price_per_day" type="number" step="0.01" defaultValue={editHall?.price_per_day || 0} /></div>
-                </div>
-                <div><Label htmlFor="description">Description</Label><Textarea id="description" name="description" defaultValue={editHall?.description || ''} /></div>
-                <Button type="submit" className="w-full" disabled={upsertHall.isPending}>{editHall ? 'Update' : 'Create'} Hall</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </PermissionButton>
+        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditHall(null); }}>
+          <DialogTrigger asChild>
+            <PermissionButton permitted={canCreateHall}><Plus className="h-4 w-4 mr-2" />Add Hall</PermissionButton>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg w-full">
+            <DialogHeader><DialogTitle>{editHall ? 'Edit Hall' : 'Add Hall'}</DialogTitle></DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div><Label htmlFor="name">Name</Label><Input id="name" name="name" required defaultValue={editHall?.name || ''} /></div>
+              <div><Label htmlFor="capacity">Capacity</Label><Input id="capacity" name="capacity" type="number" defaultValue={editHall?.capacity || 100} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label htmlFor="price_per_hour">Price/Hour</Label><Input id="price_per_hour" name="price_per_hour" type="number" step="0.01" defaultValue={editHall?.price_per_hour || 0} /></div>
+                <div><Label htmlFor="price_per_day">Price/Day</Label><Input id="price_per_day" name="price_per_day" type="number" step="0.01" defaultValue={editHall?.price_per_day || 0} /></div>
+              </div>
+              <div><Label htmlFor="description">Description</Label><Textarea id="description" name="description" defaultValue={editHall?.description || ''} /></div>
+              <Button type="submit" className="w-full" disabled={upsertHall.isPending}>{editHall ? 'Update' : 'Create'} Hall</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {isLoading ? (
@@ -149,15 +151,15 @@ export default function BanquetHalls() {
                 </div>
                 {hall.description && <p className="text-xs text-muted-foreground line-clamp-2">{hall.description}</p>}
                 <div className="flex gap-2">
-                  {canEdit('banquet') && (
-                    <Select value={hall.status || 'available'} onValueChange={(val) => updateStatus.mutate({ id: hall.id, status: val as BanquetHallStatus })}>
+                  {canEditHall && (
+                    <Select value={hall.status || 'available'} onValueChange={(val) => updateStatus.mutate({ id: hall.id, status: val })}>
                       <SelectTrigger className="h-8 text-xs flex-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {hallStatuses.map((s) => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   )}
-                  {canEdit('banquet') && (
+                  {canEditHall && (
                     <Button variant="outline" size="sm" className="h-8" onClick={() => { setEditHall(hall); setDialogOpen(true); }}>Edit</Button>
                   )}
                 </div>
