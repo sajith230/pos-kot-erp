@@ -102,6 +102,7 @@ export function AppSidebar() {
   const filteredPos = filterItems(posNavItems);
   const filteredInventory = filterItems(inventoryNavItems);
   const filteredCrm = filterItems(crmNavItems);
+  const filteredHospitality = filterItems(hospitalityNavItems);
   const filteredReports = filterItems(reportsNavItems);
   const filteredSettings = filterItems(settingsNavItems);
 
