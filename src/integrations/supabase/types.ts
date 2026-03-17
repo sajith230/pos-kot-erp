@@ -53,6 +53,173 @@ export type Database = {
         }
         Relationships: []
       }
+      banquet_bookings: {
+        Row: {
+          advance_paid: number | null
+          booking_number: string
+          branch_id: string
+          business_id: string
+          catering_included: boolean | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          end_time: string
+          event_date: string
+          event_name: string
+          event_type: string | null
+          guest_count: number | null
+          hall_id: string
+          id: string
+          notes: string | null
+          special_requirements: string | null
+          start_time: string
+          status: Database["public"]["Enums"]["banquet_booking_status"] | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          advance_paid?: number | null
+          booking_number: string
+          branch_id: string
+          business_id: string
+          catering_included?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          end_time: string
+          event_date: string
+          event_name: string
+          event_type?: string | null
+          guest_count?: number | null
+          hall_id: string
+          id?: string
+          notes?: string | null
+          special_requirements?: string | null
+          start_time: string
+          status?: Database["public"]["Enums"]["banquet_booking_status"] | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          advance_paid?: number | null
+          booking_number?: string
+          branch_id?: string
+          business_id?: string
+          catering_included?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          end_time?: string
+          event_date?: string
+          event_name?: string
+          event_type?: string | null
+          guest_count?: number | null
+          hall_id?: string
+          id?: string
+          notes?: string | null
+          special_requirements?: string | null
+          start_time?: string
+          status?: Database["public"]["Enums"]["banquet_booking_status"] | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banquet_bookings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banquet_bookings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banquet_bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banquet_bookings_hall_id_fkey"
+            columns: ["hall_id"]
+            isOneToOne: false
+            referencedRelation: "banquet_halls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      banquet_halls: {
+        Row: {
+          amenities: Json | null
+          branch_id: string
+          business_id: string
+          capacity: number | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          price_per_day: number | null
+          price_per_hour: number | null
+          status: Database["public"]["Enums"]["banquet_hall_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          amenities?: Json | null
+          branch_id: string
+          business_id: string
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          price_per_day?: number | null
+          price_per_hour?: number | null
+          status?: Database["public"]["Enums"]["banquet_hall_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          amenities?: Json | null
+          branch_id?: string
+          business_id?: string
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          price_per_day?: number | null
+          price_per_hour?: number | null
+          status?: Database["public"]["Enums"]["banquet_hall_status"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banquet_halls_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banquet_halls_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null
@@ -1063,6 +1230,170 @@ export type Database = {
           },
         ]
       }
+      room_bookings: {
+        Row: {
+          actual_check_in: string | null
+          actual_check_out: string | null
+          advance_paid: number | null
+          booking_number: string
+          branch_id: string
+          business_id: string
+          check_in: string
+          check_out: string
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          guest_count: number | null
+          id: string
+          notes: string | null
+          room_id: string
+          status: Database["public"]["Enums"]["room_booking_status"] | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          actual_check_in?: string | null
+          actual_check_out?: string | null
+          advance_paid?: number | null
+          booking_number: string
+          branch_id: string
+          business_id: string
+          check_in: string
+          check_out: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          guest_count?: number | null
+          id?: string
+          notes?: string | null
+          room_id: string
+          status?: Database["public"]["Enums"]["room_booking_status"] | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          actual_check_in?: string | null
+          actual_check_out?: string | null
+          advance_paid?: number | null
+          booking_number?: string
+          branch_id?: string
+          business_id?: string
+          check_in?: string
+          check_out?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          guest_count?: number | null
+          id?: string
+          notes?: string | null
+          room_id?: string
+          status?: Database["public"]["Enums"]["room_booking_status"] | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_bookings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_bookings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_bookings_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          amenities: Json | null
+          branch_id: string
+          business_id: string
+          capacity: number | null
+          created_at: string
+          description: string | null
+          floor: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          price_per_night: number
+          room_number: string
+          room_type: Database["public"]["Enums"]["room_type"]
+          status: Database["public"]["Enums"]["room_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          amenities?: Json | null
+          branch_id: string
+          business_id: string
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          floor?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          price_per_night?: number
+          room_number: string
+          room_type?: Database["public"]["Enums"]["room_type"]
+          status?: Database["public"]["Enums"]["room_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          amenities?: Json | null
+          branch_id?: string
+          business_id?: string
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          floor?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          price_per_night?: number
+          room_number?: string
+          room_type?: Database["public"]["Enums"]["room_type"]
+          status?: Database["public"]["Enums"]["room_status"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           business_id: string
@@ -1518,6 +1849,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "manager" | "cashier" | "waiter" | "kitchen"
+      banquet_booking_status:
+        | "confirmed"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+      banquet_hall_status: "available" | "booked" | "maintenance"
       order_status:
         | "pending"
         | "preparing"
@@ -1528,6 +1865,19 @@ export type Database = {
       order_type: "dine_in" | "takeaway" | "delivery"
       payment_method: "cash" | "card" | "upi" | "wallet" | "split"
       po_status: "draft" | "sent" | "partial" | "received" | "cancelled"
+      room_booking_status:
+        | "confirmed"
+        | "checked_in"
+        | "checked_out"
+        | "cancelled"
+        | "no_show"
+      room_status:
+        | "available"
+        | "occupied"
+        | "reserved"
+        | "maintenance"
+        | "cleaning"
+      room_type: "standard" | "deluxe" | "suite" | "premium"
       table_status: "available" | "occupied" | "reserved" | "cleaning"
       transaction_status:
         | "completed"
@@ -1662,6 +2012,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "manager", "cashier", "waiter", "kitchen"],
+      banquet_booking_status: [
+        "confirmed",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+      banquet_hall_status: ["available", "booked", "maintenance"],
       order_status: [
         "pending",
         "preparing",
@@ -1673,6 +2030,21 @@ export const Constants = {
       order_type: ["dine_in", "takeaway", "delivery"],
       payment_method: ["cash", "card", "upi", "wallet", "split"],
       po_status: ["draft", "sent", "partial", "received", "cancelled"],
+      room_booking_status: [
+        "confirmed",
+        "checked_in",
+        "checked_out",
+        "cancelled",
+        "no_show",
+      ],
+      room_status: [
+        "available",
+        "occupied",
+        "reserved",
+        "maintenance",
+        "cleaning",
+      ],
+      room_type: ["standard", "deluxe", "suite", "premium"],
       table_status: ["available", "occupied", "reserved", "cleaning"],
       transaction_status: [
         "completed",
