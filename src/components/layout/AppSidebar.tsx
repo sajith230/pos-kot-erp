@@ -15,6 +15,10 @@ import {
   UserCog,
   Shield,
   LogOut,
+  BedDouble,
+  CalendarCheck,
+  Castle,
+  PartyPopper,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import {
