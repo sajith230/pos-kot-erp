@@ -1069,10 +1069,68 @@ export default function RetailPOS() {
                 <Plug className="h-4 w-4 mr-1" /> Connect Printer
               </Button>
             )}
+            <Button variant="outline" className="bg-green-600 text-white hover:bg-green-700 border-green-600" onClick={handleWhatsAppClick}>
+              <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
+            </Button>
             <Button variant="outline" onClick={handlePrintReceipt}>
               <Printer className="h-4 w-4 mr-1" /> Print
             </Button>
             <Button onClick={handleReceiptDone}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* WhatsApp Share Dialog */}
+      <Dialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-green-600" /> Share Invoice via WhatsApp
+            </DialogTitle>
+            <DialogDescription>Enter the customer's WhatsApp number to share the invoice.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>WhatsApp Number</Label>
+              <Input
+                placeholder="e.g. 9876543210"
+                value={whatsAppPhone}
+                onChange={(e) => setWhatsAppPhone(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Indian numbers auto-prefixed with +91</p>
+            </div>
+            {!receiptData?.customer && (
+              <>
+                <div>
+                  <Label>Customer Name</Label>
+                  <Input
+                    placeholder="Customer name"
+                    value={whatsAppName}
+                    onChange={(e) => setWhatsAppName(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="saveCustomer"
+                    checked={saveAsCustomer}
+                    onCheckedChange={(v) => setSaveAsCustomer(!!v)}
+                  />
+                  <Label htmlFor="saveCustomer" className="text-sm cursor-pointer">
+                    Save as new customer
+                  </Label>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsWhatsAppOpen(false)}>Cancel</Button>
+            <Button
+              className="bg-green-600 text-white hover:bg-green-700"
+              onClick={handleWhatsAppSend}
+              disabled={!whatsAppPhone.trim()}
+            >
+              <MessageCircle className="h-4 w-4 mr-1" /> Send
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
