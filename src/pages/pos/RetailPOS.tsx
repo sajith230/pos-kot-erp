@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search, Plus, Minus, Trash2, User, Percent, CreditCard, Banknote, Wallet,
-  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug, Camera, ShoppingCart
+  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug, Camera, ShoppingCart,
+  MessageCircle, Save
 } from 'lucide-react';
 
 import BarcodeScanner from '@/components/barcode/BarcodeScanner';
