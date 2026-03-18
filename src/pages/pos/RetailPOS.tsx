@@ -99,6 +99,12 @@ export default function RetailPOS() {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
 
+  // WhatsApp sharing
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
+  const [whatsAppPhone, setWhatsAppPhone] = useState('');
+  const [whatsAppName, setWhatsAppName] = useState('');
+  const [saveAsCustomer, setSaveAsCustomer] = useState(false);
+
   // Hold & Recall
   const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
   const [isRecallOpen, setIsRecallOpen] = useState(false);
