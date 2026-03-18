@@ -543,6 +543,91 @@ export default function RetailPOS() {
     setIsReceiptOpen(false);
   }
 
+  function buildWhatsAppInvoiceText(receipt: ReceiptData): string {
+    const lines: string[] = [];
+    lines.push(`*${business?.name || 'Invoice'}*`);
+    if (business?.address) lines.push(business.address);
+    if (business?.phone) lines.push(`Tel: ${business.phone}`);
+    lines.push('');
+    lines.push(`Invoice #${receipt.transactionNumber}`);
+    lines.push(`Date: ${format(new Date(receipt.createdAt), 'dd/MM/yyyy h:mm a')}`);
+    lines.push('');
+    receipt.items.forEach((item) => {
+      lines.push(`${item.product.name} x${item.quantity} — ${fc(item.product.price * item.quantity)}`);
+    });
+    lines.push('');
+    lines.push(`Subtotal: ${fc(receipt.subtotal)}`);
+    if (receipt.taxAmount > 0) lines.push(`Tax: ${fc(receipt.taxAmount)}`);
+    if (receipt.discountAmount > 0) lines.push(`Discount: -${fc(receipt.discountAmount)}`);
+    lines.push(`*Total: ${fc(receipt.total)}*`);
+    lines.push('');
+    lines.push(`Payment: ${receipt.paymentMethod}`);
+    if (receipt.customer?.name) lines.push(`Customer: ${receipt.customer.name}`);
+    lines.push('');
+    lines.push('Thank you for your purchase!');
+    return lines.join('\n');
+  }
+
+  function handleWhatsAppClick() {
+    if (receiptData?.customer?.phone) {
+      setWhatsAppPhone(receiptData.customer.phone);
+      setWhatsAppName(receiptData.customer.name || '');
+      setSaveAsCustomer(false);
+    } else {
+      setWhatsAppPhone('');
+      setWhatsAppName('');
+      setSaveAsCustomer(true);
+    }
+    setIsWhatsAppOpen(true);
+  }
+
+  async function handleWhatsAppSend() {
+    if (!whatsAppPhone.trim() || !receiptData) return;
+
+    // Save as customer if checked and no existing customer
+    if (saveAsCustomer && whatsAppName.trim() && !receiptData.customer) {
+      try {
+        const { data: newCustomer } = await supabase
+          .from('customers')
+          .insert({
+            business_id: business!.id,
+            name: whatsAppName.trim(),
+            phone: whatsAppPhone.trim(),
+          })
+          .select()
+          .single();
+
+        if (newCustomer) {
+          // Update transaction with customer_id
+          await supabase
+            .from('transactions')
+            .update({ customer_id: newCustomer.id })
+            .eq('transaction_number', receiptData.transactionNumber)
+            .eq('business_id', business!.id);
+          
+          toast({ title: 'Customer saved', description: `${whatsAppName} added to customers` });
+        }
+      } catch (err: any) {
+        console.error('Failed to save customer:', err);
+      }
+    }
+
+    // Clean phone number
+    let cleanPhone = whatsAppPhone.replace(/[^0-9+]/g, '');
+    if (cleanPhone.startsWith('0')) cleanPhone = '91' + cleanPhone.slice(1);
+    if (!cleanPhone.startsWith('+') && !cleanPhone.startsWith('91') && cleanPhone.length === 10) {
+      cleanPhone = '91' + cleanPhone;
+    }
+    cleanPhone = cleanPhone.replace('+', '');
+
+    const invoiceText = buildWhatsAppInvoiceText(receiptData);
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(invoiceText)}`;
+    window.open(url, '_blank');
+
+    setIsWhatsAppOpen(false);
+    toast({ title: 'WhatsApp opened', description: 'Invoice shared via WhatsApp' });
+  }
+
   const [isCompact, setIsCompact] = useState(window.innerWidth < 1024);
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
 
