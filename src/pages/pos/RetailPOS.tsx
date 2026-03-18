@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search, Plus, Minus, Trash2, User, Percent, CreditCard, Banknote, Wallet,
-  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug, Camera, ShoppingCart
+  Clock, PauseCircle, PlayCircle, X, Printer, CheckCircle, Tag, Plug, Camera, ShoppingCart,
+  MessageCircle, Save
 } from 'lucide-react';
 
 import BarcodeScanner from '@/components/barcode/BarcodeScanner';
@@ -15,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
@@ -96,6 +98,12 @@ export default function RetailPOS() {
   // Receipt
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+
+  // WhatsApp sharing
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
+  const [whatsAppPhone, setWhatsAppPhone] = useState('');
+  const [whatsAppName, setWhatsAppName] = useState('');
+  const [saveAsCustomer, setSaveAsCustomer] = useState(false);
 
   // Hold & Recall
   const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
@@ -533,6 +541,91 @@ export default function RetailPOS() {
   function handleReceiptDone() {
     setReceiptData(null);
     setIsReceiptOpen(false);
+  }
+
+  function buildWhatsAppInvoiceText(receipt: ReceiptData): string {
+    const lines: string[] = [];
+    lines.push(`*${business?.name || 'Invoice'}*`);
+    if (business?.address) lines.push(business.address);
+    if (business?.phone) lines.push(`Tel: ${business.phone}`);
+    lines.push('');
+    lines.push(`Invoice #${receipt.transactionNumber}`);
+    lines.push(`Date: ${format(new Date(receipt.createdAt), 'dd/MM/yyyy h:mm a')}`);
+    lines.push('');
+    receipt.items.forEach((item) => {
+      lines.push(`${item.product.name} x${item.quantity} — ${fc(item.product.price * item.quantity)}`);
+    });
+    lines.push('');
+    lines.push(`Subtotal: ${fc(receipt.subtotal)}`);
+    if (receipt.taxAmount > 0) lines.push(`Tax: ${fc(receipt.taxAmount)}`);
+    if (receipt.discountAmount > 0) lines.push(`Discount: -${fc(receipt.discountAmount)}`);
+    lines.push(`*Total: ${fc(receipt.total)}*`);
+    lines.push('');
+    lines.push(`Payment: ${receipt.paymentMethod}`);
+    if (receipt.customer?.name) lines.push(`Customer: ${receipt.customer.name}`);
+    lines.push('');
+    lines.push('Thank you for your purchase!');
+    return lines.join('\n');
+  }
+
+  function handleWhatsAppClick() {
+    if (receiptData?.customer?.phone) {
+      setWhatsAppPhone(receiptData.customer.phone);
+      setWhatsAppName(receiptData.customer.name || '');
+      setSaveAsCustomer(false);
+    } else {
+      setWhatsAppPhone('');
+      setWhatsAppName('');
+      setSaveAsCustomer(true);
+    }
+    setIsWhatsAppOpen(true);
+  }
+
+  async function handleWhatsAppSend() {
+    if (!whatsAppPhone.trim() || !receiptData) return;
+
+    // Save as customer if checked and no existing customer
+    if (saveAsCustomer && whatsAppName.trim() && !receiptData.customer) {
+      try {
+        const { data: newCustomer } = await supabase
+          .from('customers')
+          .insert({
+            business_id: business!.id,
+            name: whatsAppName.trim(),
+            phone: whatsAppPhone.trim(),
+          })
+          .select()
+          .single();
+
+        if (newCustomer) {
+          // Update transaction with customer_id
+          await supabase
+            .from('transactions')
+            .update({ customer_id: newCustomer.id })
+            .eq('transaction_number', receiptData.transactionNumber)
+            .eq('business_id', business!.id);
+          
+          toast({ title: 'Customer saved', description: `${whatsAppName} added to customers` });
+        }
+      } catch (err: any) {
+        console.error('Failed to save customer:', err);
+      }
+    }
+
+    // Clean phone number
+    let cleanPhone = whatsAppPhone.replace(/[^0-9+]/g, '');
+    if (cleanPhone.startsWith('0')) cleanPhone = '91' + cleanPhone.slice(1);
+    if (!cleanPhone.startsWith('+') && !cleanPhone.startsWith('91') && cleanPhone.length === 10) {
+      cleanPhone = '91' + cleanPhone;
+    }
+    cleanPhone = cleanPhone.replace('+', '');
+
+    const invoiceText = buildWhatsAppInvoiceText(receiptData);
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(invoiceText)}`;
+    window.open(url, '_blank');
+
+    setIsWhatsAppOpen(false);
+    toast({ title: 'WhatsApp opened', description: 'Invoice shared via WhatsApp' });
   }
 
   const [isCompact, setIsCompact] = useState(window.innerWidth < 1024);
@@ -976,10 +1069,68 @@ export default function RetailPOS() {
                 <Plug className="h-4 w-4 mr-1" /> Connect Printer
               </Button>
             )}
+            <Button variant="outline" className="bg-green-600 text-white hover:bg-green-700 border-green-600" onClick={handleWhatsAppClick}>
+              <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
+            </Button>
             <Button variant="outline" onClick={handlePrintReceipt}>
               <Printer className="h-4 w-4 mr-1" /> Print
             </Button>
             <Button onClick={handleReceiptDone}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* WhatsApp Share Dialog */}
+      <Dialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-green-600" /> Share Invoice via WhatsApp
+            </DialogTitle>
+            <DialogDescription>Enter the customer's WhatsApp number to share the invoice.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>WhatsApp Number</Label>
+              <Input
+                placeholder="e.g. 9876543210"
+                value={whatsAppPhone}
+                onChange={(e) => setWhatsAppPhone(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Indian numbers auto-prefixed with +91</p>
+            </div>
+            {!receiptData?.customer && (
+              <>
+                <div>
+                  <Label>Customer Name</Label>
+                  <Input
+                    placeholder="Customer name"
+                    value={whatsAppName}
+                    onChange={(e) => setWhatsAppName(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="saveCustomer"
+                    checked={saveAsCustomer}
+                    onCheckedChange={(v) => setSaveAsCustomer(!!v)}
+                  />
+                  <Label htmlFor="saveCustomer" className="text-sm cursor-pointer">
+                    Save as new customer
+                  </Label>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsWhatsAppOpen(false)}>Cancel</Button>
+            <Button
+              className="bg-green-600 text-white hover:bg-green-700"
+              onClick={handleWhatsAppSend}
+              disabled={!whatsAppPhone.trim()}
+            >
+              <MessageCircle className="h-4 w-4 mr-1" /> Send
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
