@@ -612,13 +612,17 @@ export default function RetailPOS() {
       }
     }
 
-    // Clean phone number
-    let cleanPhone = whatsAppPhone.replace(/[^0-9+]/g, '');
-    if (cleanPhone.startsWith('0')) cleanPhone = '91' + cleanPhone.slice(1);
-    if (!cleanPhone.startsWith('+') && !cleanPhone.startsWith('91') && cleanPhone.length === 10) {
-      cleanPhone = '91' + cleanPhone;
+    // Clean phone number - strip spaces/dashes, keep digits and leading +
+    let cleanPhone = whatsAppPhone.replace(/[\s\-()]/g, '');
+    // If starts with +, remove it but keep the country code digits
+    if (cleanPhone.startsWith('+')) {
+      cleanPhone = cleanPhone.slice(1);
+    } else if (cleanPhone.startsWith('0') && cleanPhone.length >= 10) {
+      // Local number without country code - don't assume country, user should include it
+      cleanPhone = cleanPhone.slice(1);
     }
-    cleanPhone = cleanPhone.replace('+', '');
+    // Only keep digits
+    cleanPhone = cleanPhone.replace(/[^0-9]/g, '');
 
     const invoiceText = buildWhatsAppInvoiceText(receiptData);
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(invoiceText)}`;
