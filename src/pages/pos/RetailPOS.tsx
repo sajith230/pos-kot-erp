@@ -1135,36 +1135,49 @@ export default function RetailPOS() {
             <DialogDescription>Enter the customer's WhatsApp number to share the invoice.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
+            <div className="relative">
               <Label>WhatsApp Number</Label>
               <Input
                 placeholder="e.g. 9876543210"
                 value={whatsAppPhone}
-                onChange={(e) => setWhatsAppPhone(e.target.value)}
+                onChange={(e) => { setWhatsAppPhone(e.target.value); if (selectedExistingCustomer) clearWhatsAppCustomerSelection(); }}
               />
               <p className="text-xs text-muted-foreground mt-1">Indian numbers auto-prefixed with +91</p>
+              {customerSuggestions.length > 0 && !selectedExistingCustomer && (
+                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-40 overflow-y-auto">
+                  {customerSuggestions.map(c => (
+                    <button key={c.id} className="w-full text-left px-3 py-2 hover:bg-accent text-sm flex justify-between" onClick={() => selectWhatsAppCustomer(c)}>
+                      <span className="font-medium">{c.name}</span>
+                      <span className="text-muted-foreground">{c.phone}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            {!receiptData?.customer && (
-              <>
-                <div>
-                  <Label>Customer Name</Label>
-                  <Input
-                    placeholder="Customer name"
-                    value={whatsAppName}
-                    onChange={(e) => setWhatsAppName(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="saveCustomer"
-                    checked={saveAsCustomer}
-                    onCheckedChange={(v) => setSaveAsCustomer(!!v)}
-                  />
-                  <Label htmlFor="saveCustomer" className="text-sm cursor-pointer">
-                    Save as new customer
-                  </Label>
-                </div>
-              </>
+            <div>
+              <div className="flex items-center justify-between">
+                <Label>Customer Name</Label>
+                {selectedExistingCustomer && (
+                  <button className="text-xs text-primary hover:underline" onClick={clearWhatsAppCustomerSelection}>Clear selection</button>
+                )}
+              </div>
+              <Input
+                placeholder="Customer name"
+                value={whatsAppName}
+                onChange={(e) => { setWhatsAppName(e.target.value); if (selectedExistingCustomer) clearWhatsAppCustomerSelection(); }}
+              />
+            </div>
+            {!selectedExistingCustomer && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="saveCustomer"
+                  checked={saveAsCustomer}
+                  onCheckedChange={(v) => setSaveAsCustomer(!!v)}
+                />
+                <Label htmlFor="saveCustomer" className="text-sm cursor-pointer">
+                  Save as new customer
+                </Label>
+              </div>
             )}
           </div>
           <DialogFooter>
