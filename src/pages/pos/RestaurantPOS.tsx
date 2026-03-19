@@ -55,6 +55,23 @@ export default function RestaurantPOS() {
 
   const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
 
+  // Receipt & WhatsApp sharing state
+  const [receiptData, setReceiptData] = useState<{
+    txnNumber: string;
+    items: { name: string; qty: number; price: number }[];
+    subtotal: number;
+    taxAmount: number;
+    total: number;
+    paymentMethod: string;
+    tableName?: string;
+    orderNumber?: string;
+  } | null>(null);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
+  const [whatsAppPhone, setWhatsAppPhone] = useState('');
+  const [whatsAppName, setWhatsAppName] = useState('');
+  const [saveAsCustomer, setSaveAsCustomer] = useState(false);
+
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
   const { format: fc } = useCurrency();
