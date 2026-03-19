@@ -17,9 +17,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrency } from '@/lib/formatCurrency';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   Users, UtensilsCrossed, Truck, ShoppingBag, Search, Plus, Minus, Trash2,
-  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft, Camera
+  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft, Camera,
+  MessageCircle, Save
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TableFloorPlan from '@/components/pos/TableFloorPlan';
@@ -51,6 +54,23 @@ export default function RestaurantPOS() {
   } | null>(null);
 
   const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+
+  // Receipt & WhatsApp sharing state
+  const [receiptData, setReceiptData] = useState<{
+    txnNumber: string;
+    items: { name: string; qty: number; price: number }[];
+    subtotal: number;
+    taxAmount: number;
+    total: number;
+    paymentMethod: string;
+    tableName?: string;
+    orderNumber?: string;
+  } | null>(null);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
+  const [whatsAppPhone, setWhatsAppPhone] = useState('');
+  const [whatsAppName, setWhatsAppName] = useState('');
+  const [saveAsCustomer, setSaveAsCustomer] = useState(false);
 
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
@@ -430,16 +450,109 @@ export default function RestaurantPOS() {
         setTables(prev => prev.map(t => t.id === selectedTable.id ? { ...t, status: 'available' as TableStatus } : t));
       }
 
-      toast({ title: 'Payment Complete!', description: `${txnNumber} — ${fc(totalAmount)}` });
-      setActiveOrder(null);
-      setOrderItems([]);
-      setSelectedTable(null);
+      // Build receipt data and show receipt dialog
+      const paymentMethodLabel = splits.length > 1 ? 'Split' : splits[0]?.method || 'cash';
+      setReceiptData({
+        txnNumber,
+        items: orderItems.map(i => ({
+          name: i.product?.name || 'Item',
+          qty: i.quantity,
+          price: i.unit_price * i.quantity,
+        })),
+        subtotal,
+        taxAmount,
+        total: totalAmount,
+        paymentMethod: paymentMethodLabel,
+        tableName: selectedTable?.name,
+        orderNumber: activeOrder.order_number,
+      });
       setIsPaymentOpen(false);
+      setIsReceiptOpen(true);
+
+      toast({ title: 'Payment Complete!', description: `${txnNumber} — ${fc(totalAmount)}` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Payment Failed', description: error.message });
     } finally {
       setIsProcessingPayment(false);
     }
+  }
+
+  function handleReceiptDone() {
+    setIsReceiptOpen(false);
+    setReceiptData(null);
+    setActiveOrder(null);
+    setOrderItems([]);
+    setSelectedTable(null);
+  }
+
+  function buildWhatsAppInvoiceText() {
+    if (!receiptData) return '';
+    const lines: string[] = [];
+    if (business?.name) lines.push(`*${business.name}*`);
+    if (business?.address) lines.push(business.address);
+    if (business?.phone) lines.push(`Tel: ${business.phone}`);
+    lines.push('');
+    lines.push(`Invoice #${receiptData.txnNumber}`);
+    if (receiptData.tableName) lines.push(`Table: ${receiptData.tableName}`);
+    if (receiptData.orderNumber) lines.push(`Order: ${receiptData.orderNumber}`);
+    lines.push(`Date: ${new Date().toLocaleDateString()}`);
+    lines.push('');
+    receiptData.items.forEach(item => {
+      lines.push(`${item.name} x${item.qty} — ${fc(item.price)}`);
+    });
+    lines.push('');
+    lines.push(`Subtotal: ${fc(receiptData.subtotal)}`);
+    if (receiptData.taxAmount > 0) lines.push(`Tax: ${fc(receiptData.taxAmount)}`);
+    lines.push(`*Total: ${fc(receiptData.total)}*`);
+    lines.push('');
+    lines.push(`Payment: ${receiptData.paymentMethod}`);
+    lines.push('Thank you for your visit!');
+    return lines.join('\n');
+  }
+
+  function handleWhatsAppClick() {
+    if (deliveryCustomer.phone) {
+      setWhatsAppPhone(deliveryCustomer.phone);
+      setWhatsAppName(deliveryCustomer.name);
+    } else {
+      setWhatsAppPhone('');
+      setWhatsAppName('');
+    }
+    setSaveAsCustomer(false);
+    setIsWhatsAppOpen(true);
+  }
+
+  async function handleWhatsAppSend() {
+    if (!whatsAppPhone.trim()) {
+      toast({ variant: 'destructive', title: 'Phone number required' });
+      return;
+    }
+
+    if (saveAsCustomer && whatsAppName.trim() && business?.id) {
+      try {
+        await supabase.from('customers').insert({
+          business_id: business.id,
+          name: whatsAppName.trim(),
+          phone: whatsAppPhone.trim(),
+        });
+        toast({ title: 'Customer saved!' });
+      } catch (e: any) {
+        console.error('Failed to save customer', e);
+      }
+    }
+
+    let cleanPhone = whatsAppPhone.replace(/[\s\-()]/g, '');
+    if (cleanPhone.startsWith('+')) {
+      cleanPhone = cleanPhone.slice(1);
+    } else if (cleanPhone.startsWith('0') && cleanPhone.length >= 10) {
+      cleanPhone = cleanPhone.slice(1);
+    }
+    cleanPhone = cleanPhone.replace(/[^0-9]/g, '');
+
+    const invoiceText = buildWhatsAppInvoiceText();
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(invoiceText)}`;
+    window.open(url, '_blank');
+    setIsWhatsAppOpen(false);
   }
 
   async function cancelOrder() {
@@ -759,6 +872,76 @@ export default function RestaurantPOS() {
           isLoading={isSendingKOT}
         />
       )}
+
+      {/* Receipt Dialog */}
+      <Dialog open={isReceiptOpen} onOpenChange={(open) => { if (!open) handleReceiptDone(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Receipt — {receiptData?.txnNumber}</DialogTitle>
+          </DialogHeader>
+          {receiptData && (
+            <div className="space-y-3">
+              {receiptData.tableName && (
+                <p className="text-sm text-muted-foreground">Table: {receiptData.tableName}</p>
+              )}
+              <div className="space-y-1">
+                {receiptData.items.map((item, idx) => (
+                  <div key={idx} className="flex justify-between text-sm">
+                    <span>{item.name} × {item.qty}</span>
+                    <span>{fc(item.price)}</span>
+                  </div>
+                ))}
+              </div>
+              <Separator />
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{fc(receiptData.subtotal)}</span></div>
+                {receiptData.taxAmount > 0 && (
+                  <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{fc(receiptData.taxAmount)}</span></div>
+                )}
+                <div className="flex justify-between font-semibold text-base"><span>Total</span><span>{fc(receiptData.total)}</span></div>
+              </div>
+              <p className="text-xs text-muted-foreground">Payment: {receiptData.paymentMethod}</p>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white hover:text-white border-green-600" onClick={handleWhatsAppClick}>
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </Button>
+            <Button onClick={handleReceiptDone}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* WhatsApp Share Dialog */}
+      <Dialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Share via WhatsApp</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="wa-phone">WhatsApp Number</Label>
+              <Input id="wa-phone" placeholder="+94 77 123 4567" value={whatsAppPhone} onChange={e => setWhatsAppPhone(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="wa-name">Customer Name</Label>
+              <Input id="wa-name" placeholder="Customer name" value={whatsAppName} onChange={e => setWhatsAppName(e.target.value)} />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox id="wa-save" checked={saveAsCustomer} onCheckedChange={(v) => setSaveAsCustomer(v === true)} />
+              <Label htmlFor="wa-save" className="text-sm cursor-pointer">Save as new customer</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsWhatsAppOpen(false)}>Cancel</Button>
+            <Button className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" onClick={handleWhatsAppSend}>
+              <Save className="h-4 w-4" />
+              Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
