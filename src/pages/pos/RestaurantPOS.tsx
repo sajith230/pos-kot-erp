@@ -71,6 +71,9 @@ export default function RestaurantPOS() {
   const [whatsAppPhone, setWhatsAppPhone] = useState('');
   const [whatsAppName, setWhatsAppName] = useState('');
   const [saveAsCustomer, setSaveAsCustomer] = useState(false);
+  const [selectedExistingCustomer, setSelectedExistingCustomer] = useState(false);
+  const [customerSuggestions, setCustomerSuggestions] = useState<{ id: string; name: string; phone: string | null }[]>([]);
+  const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
 
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
