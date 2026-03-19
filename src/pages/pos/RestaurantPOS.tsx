@@ -872,6 +872,76 @@ export default function RestaurantPOS() {
           isLoading={isSendingKOT}
         />
       )}
+
+      {/* Receipt Dialog */}
+      <Dialog open={isReceiptOpen} onOpenChange={(open) => { if (!open) handleReceiptDone(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Receipt — {receiptData?.txnNumber}</DialogTitle>
+          </DialogHeader>
+          {receiptData && (
+            <div className="space-y-3">
+              {receiptData.tableName && (
+                <p className="text-sm text-muted-foreground">Table: {receiptData.tableName}</p>
+              )}
+              <div className="space-y-1">
+                {receiptData.items.map((item, idx) => (
+                  <div key={idx} className="flex justify-between text-sm">
+                    <span>{item.name} × {item.qty}</span>
+                    <span>{fc(item.price)}</span>
+                  </div>
+                ))}
+              </div>
+              <Separator />
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{fc(receiptData.subtotal)}</span></div>
+                {receiptData.taxAmount > 0 && (
+                  <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{fc(receiptData.taxAmount)}</span></div>
+                )}
+                <div className="flex justify-between font-semibold text-base"><span>Total</span><span>{fc(receiptData.total)}</span></div>
+              </div>
+              <p className="text-xs text-muted-foreground">Payment: {receiptData.paymentMethod}</p>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" className="gap-1.5 bg-green-600 hover:bg-green-700 text-white hover:text-white border-green-600" onClick={handleWhatsAppClick}>
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </Button>
+            <Button onClick={handleReceiptDone}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* WhatsApp Share Dialog */}
+      <Dialog open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Share via WhatsApp</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="wa-phone">WhatsApp Number</Label>
+              <Input id="wa-phone" placeholder="+94 77 123 4567" value={whatsAppPhone} onChange={e => setWhatsAppPhone(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="wa-name">Customer Name</Label>
+              <Input id="wa-name" placeholder="Customer name" value={whatsAppName} onChange={e => setWhatsAppName(e.target.value)} />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox id="wa-save" checked={saveAsCustomer} onCheckedChange={(v) => setSaveAsCustomer(v === true)} />
+              <Label htmlFor="wa-save" className="text-sm cursor-pointer">Save as new customer</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsWhatsAppOpen(false)}>Cancel</Button>
+            <Button className="gap-1.5 bg-green-600 hover:bg-green-700 text-white" onClick={handleWhatsAppSend}>
+              <Save className="h-4 w-4" />
+              Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
