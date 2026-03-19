@@ -450,16 +450,109 @@ export default function RestaurantPOS() {
         setTables(prev => prev.map(t => t.id === selectedTable.id ? { ...t, status: 'available' as TableStatus } : t));
       }
 
-      toast({ title: 'Payment Complete!', description: `${txnNumber} — ${fc(totalAmount)}` });
-      setActiveOrder(null);
-      setOrderItems([]);
-      setSelectedTable(null);
+      // Build receipt data and show receipt dialog
+      const paymentMethodLabel = splits.length > 1 ? 'Split' : splits[0]?.method || 'cash';
+      setReceiptData({
+        txnNumber,
+        items: orderItems.map(i => ({
+          name: i.product?.name || 'Item',
+          qty: i.quantity,
+          price: i.unit_price * i.quantity,
+        })),
+        subtotal,
+        taxAmount,
+        total: totalAmount,
+        paymentMethod: paymentMethodLabel,
+        tableName: selectedTable?.name,
+        orderNumber: activeOrder.order_number,
+      });
       setIsPaymentOpen(false);
+      setIsReceiptOpen(true);
+
+      toast({ title: 'Payment Complete!', description: `${txnNumber} — ${fc(totalAmount)}` });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Payment Failed', description: error.message });
     } finally {
       setIsProcessingPayment(false);
     }
+  }
+
+  function handleReceiptDone() {
+    setIsReceiptOpen(false);
+    setReceiptData(null);
+    setActiveOrder(null);
+    setOrderItems([]);
+    setSelectedTable(null);
+  }
+
+  function buildWhatsAppInvoiceText() {
+    if (!receiptData) return '';
+    const lines: string[] = [];
+    if (business?.name) lines.push(`*${business.name}*`);
+    if (business?.address) lines.push(business.address);
+    if (business?.phone) lines.push(`Tel: ${business.phone}`);
+    lines.push('');
+    lines.push(`Invoice #${receiptData.txnNumber}`);
+    if (receiptData.tableName) lines.push(`Table: ${receiptData.tableName}`);
+    if (receiptData.orderNumber) lines.push(`Order: ${receiptData.orderNumber}`);
+    lines.push(`Date: ${new Date().toLocaleDateString()}`);
+    lines.push('');
+    receiptData.items.forEach(item => {
+      lines.push(`${item.name} x${item.qty} — ${fc(item.price)}`);
+    });
+    lines.push('');
+    lines.push(`Subtotal: ${fc(receiptData.subtotal)}`);
+    if (receiptData.taxAmount > 0) lines.push(`Tax: ${fc(receiptData.taxAmount)}`);
+    lines.push(`*Total: ${fc(receiptData.total)}*`);
+    lines.push('');
+    lines.push(`Payment: ${receiptData.paymentMethod}`);
+    lines.push('Thank you for your visit!');
+    return lines.join('\n');
+  }
+
+  function handleWhatsAppClick() {
+    if (deliveryCustomer.phone) {
+      setWhatsAppPhone(deliveryCustomer.phone);
+      setWhatsAppName(deliveryCustomer.name);
+    } else {
+      setWhatsAppPhone('');
+      setWhatsAppName('');
+    }
+    setSaveAsCustomer(false);
+    setIsWhatsAppOpen(true);
+  }
+
+  async function handleWhatsAppSend() {
+    if (!whatsAppPhone.trim()) {
+      toast({ variant: 'destructive', title: 'Phone number required' });
+      return;
+    }
+
+    if (saveAsCustomer && whatsAppName.trim() && business?.id) {
+      try {
+        await supabase.from('customers').insert({
+          business_id: business.id,
+          name: whatsAppName.trim(),
+          phone: whatsAppPhone.trim(),
+        });
+        toast({ title: 'Customer saved!' });
+      } catch (e: any) {
+        console.error('Failed to save customer', e);
+      }
+    }
+
+    let cleanPhone = whatsAppPhone.replace(/[\s\-()]/g, '');
+    if (cleanPhone.startsWith('+')) {
+      cleanPhone = cleanPhone.slice(1);
+    } else if (cleanPhone.startsWith('0') && cleanPhone.length >= 10) {
+      cleanPhone = cleanPhone.slice(1);
+    }
+    cleanPhone = cleanPhone.replace(/[^0-9]/g, '');
+
+    const invoiceText = buildWhatsAppInvoiceText();
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(invoiceText)}`;
+    window.open(url, '_blank');
+    setIsWhatsAppOpen(false);
   }
 
   async function cancelOrder() {
