@@ -71,6 +71,9 @@ export default function RestaurantPOS() {
   const [whatsAppPhone, setWhatsAppPhone] = useState('');
   const [whatsAppName, setWhatsAppName] = useState('');
   const [saveAsCustomer, setSaveAsCustomer] = useState(false);
+  const [selectedExistingCustomer, setSelectedExistingCustomer] = useState(false);
+  const [customerSuggestions, setCustomerSuggestions] = useState<{ id: string; name: string; phone: string | null }[]>([]);
+  const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
 
   const { business, branch, user } = useAuth();
   const { toast } = useToast();
@@ -514,12 +517,50 @@ export default function RestaurantPOS() {
     if (deliveryCustomer.phone) {
       setWhatsAppPhone(deliveryCustomer.phone);
       setWhatsAppName(deliveryCustomer.name);
+      setSelectedExistingCustomer(false);
     } else {
       setWhatsAppPhone('');
       setWhatsAppName('');
+      setSelectedExistingCustomer(false);
     }
     setSaveAsCustomer(false);
+    setCustomerSuggestions([]);
     setIsWhatsAppOpen(true);
+  }
+
+  // Customer search for WhatsApp dialog
+  useEffect(() => {
+    if (!isWhatsAppOpen || selectedExistingCustomer || !business?.id) return;
+    const searchVal = whatsAppPhone.trim() || whatsAppName.trim();
+    if (searchVal.length < 3) {
+      setCustomerSuggestions([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setIsSearchingCustomer(true);
+      const { data } = await supabase
+        .from('customers')
+        .select('id, name, phone')
+        .eq('business_id', business.id)
+        .or(`phone.ilike.%${searchVal}%,name.ilike.%${searchVal}%`)
+        .limit(5);
+      setCustomerSuggestions(data || []);
+      setIsSearchingCustomer(false);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [whatsAppPhone, whatsAppName, isWhatsAppOpen, selectedExistingCustomer, business?.id]);
+
+  function selectWhatsAppCustomer(c: { id: string; name: string; phone: string | null }) {
+    setWhatsAppPhone(c.phone || '');
+    setWhatsAppName(c.name || '');
+    setSelectedExistingCustomer(true);
+    setSaveAsCustomer(false);
+    setCustomerSuggestions([]);
+  }
+
+  function clearWhatsAppCustomerSelection() {
+    setSelectedExistingCustomer(false);
+    setSaveAsCustomer(true);
   }
 
   async function handleWhatsAppSend() {
@@ -920,18 +961,35 @@ export default function RestaurantPOS() {
             <DialogTitle>Share via WhatsApp</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 relative">
               <Label htmlFor="wa-phone">WhatsApp Number</Label>
-              <Input id="wa-phone" placeholder="+94 77 123 4567" value={whatsAppPhone} onChange={e => setWhatsAppPhone(e.target.value)} />
+              <Input id="wa-phone" placeholder="+94 77 123 4567" value={whatsAppPhone} onChange={e => { setWhatsAppPhone(e.target.value); if (selectedExistingCustomer) clearWhatsAppCustomerSelection(); }} />
+              {customerSuggestions.length > 0 && !selectedExistingCustomer && (
+                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-40 overflow-y-auto">
+                  {customerSuggestions.map(c => (
+                    <button key={c.id} className="w-full text-left px-3 py-2 hover:bg-accent text-sm flex justify-between" onClick={() => selectWhatsAppCustomer(c)}>
+                      <span className="font-medium">{c.name}</span>
+                      <span className="text-muted-foreground">{c.phone}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="wa-name">Customer Name</Label>
-              <Input id="wa-name" placeholder="Customer name" value={whatsAppName} onChange={e => setWhatsAppName(e.target.value)} />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="wa-name">Customer Name</Label>
+                {selectedExistingCustomer && (
+                  <button className="text-xs text-primary hover:underline" onClick={clearWhatsAppCustomerSelection}>Clear selection</button>
+                )}
+              </div>
+              <Input id="wa-name" placeholder="Customer name" value={whatsAppName} onChange={e => { setWhatsAppName(e.target.value); if (selectedExistingCustomer) clearWhatsAppCustomerSelection(); }} />
             </div>
-            <div className="flex items-center gap-2">
-              <Checkbox id="wa-save" checked={saveAsCustomer} onCheckedChange={(v) => setSaveAsCustomer(v === true)} />
-              <Label htmlFor="wa-save" className="text-sm cursor-pointer">Save as new customer</Label>
-            </div>
+            {!selectedExistingCustomer && (
+              <div className="flex items-center gap-2">
+                <Checkbox id="wa-save" checked={saveAsCustomer} onCheckedChange={(v) => setSaveAsCustomer(v === true)} />
+                <Label htmlFor="wa-save" className="text-sm cursor-pointer">Save as new customer</Label>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsWhatsAppOpen(false)}>Cancel</Button>
