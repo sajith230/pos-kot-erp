@@ -576,12 +576,50 @@ export default function RetailPOS() {
       setWhatsAppPhone(receiptData.customer.phone);
       setWhatsAppName(receiptData.customer.name || '');
       setSaveAsCustomer(false);
+      setSelectedExistingCustomer(true);
     } else {
       setWhatsAppPhone('');
       setWhatsAppName('');
       setSaveAsCustomer(true);
+      setSelectedExistingCustomer(false);
     }
+    setCustomerSuggestions([]);
     setIsWhatsAppOpen(true);
+  }
+
+  // Customer search for WhatsApp dialog
+  useEffect(() => {
+    if (!isWhatsAppOpen || selectedExistingCustomer || !business?.id) return;
+    const searchVal = whatsAppPhone.trim() || whatsAppName.trim();
+    if (searchVal.length < 3) {
+      setCustomerSuggestions([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setIsSearchingCustomer(true);
+      const { data } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('business_id', business.id)
+        .or(`phone.ilike.%${searchVal}%,name.ilike.%${searchVal}%`)
+        .limit(5);
+      setCustomerSuggestions((data as Customer[]) || []);
+      setIsSearchingCustomer(false);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [whatsAppPhone, whatsAppName, isWhatsAppOpen, selectedExistingCustomer, business?.id]);
+
+  function selectWhatsAppCustomer(c: Customer) {
+    setWhatsAppPhone(c.phone || '');
+    setWhatsAppName(c.name || '');
+    setSelectedExistingCustomer(true);
+    setSaveAsCustomer(false);
+    setCustomerSuggestions([]);
+  }
+
+  function clearWhatsAppCustomerSelection() {
+    setSelectedExistingCustomer(false);
+    setSaveAsCustomer(true);
   }
 
   async function handleWhatsAppSend() {
