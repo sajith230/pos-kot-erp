@@ -17,9 +17,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrency } from '@/lib/formatCurrency';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   Users, UtensilsCrossed, Truck, ShoppingBag, Search, Plus, Minus, Trash2,
-  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft, Camera
+  ChefHat, Receipt, X, Banknote, CreditCard, Wallet, Loader2, ArrowLeft, Camera,
+  MessageCircle, Save
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import TableFloorPlan from '@/components/pos/TableFloorPlan';
