@@ -104,6 +104,9 @@ export default function RetailPOS() {
   const [whatsAppPhone, setWhatsAppPhone] = useState('');
   const [whatsAppName, setWhatsAppName] = useState('');
   const [saveAsCustomer, setSaveAsCustomer] = useState(false);
+  const [selectedExistingCustomer, setSelectedExistingCustomer] = useState(false);
+  const [customerSuggestions, setCustomerSuggestions] = useState<Customer[]>([]);
+  const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
 
   // Hold & Recall
   const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
